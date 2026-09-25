@@ -1,0 +1,28 @@
+@import "./App.css";
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 15px;
+}
+
+/* reaction bar fades in on hover, same pattern freshCart used for the add-to-cart button */
+.reaction-picker {
+  transition: transform 0.2s, opacity 0.2s;
+  transform: translateY(6px);
+  opacity: 0;
+  pointer-events: none;
+}
+.reaction-trigger:hover .reaction-picker,
+.reaction-picker:hover {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

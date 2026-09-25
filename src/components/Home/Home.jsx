@@ -1,0 +1,99 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import usePosts from "../../Hooks/usePosts";
+import useFriendRequestsReceived from "../../Hooks/useFriendRequestsReceived";
+import * as friendRequestService from "../../services/friendRequestService";
+import CreatePost from "../CreatePost/CreatePost";
+import PostCard from "../PostCard/PostCard";
+import Loader from "../Loader/Loader";
+import { initials, ensureArray } from "../../utils/constants";
+import React from "react"
+
+function FriendRequestsWidget() {
+  const { data, isLoading } = useFriendRequestsReceived({ page: 1, size: 3 });
+  const queryClient = useQueryClient();
+  const requests = ensureArray(data, ["requests", "docs"]);
+
+  const respond = useMutation({
+    mutationFn: ({ id, accept }) =>
+      accept
+        ? friendRequestService.acceptFriendRequest(id)
+        : friendRequestService.rejectFriendRequest(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["friend-requests-received"] }),
+  });
+
+  if (isLoading) return null;
+  if (!requests.length) return null;
+
+  return (
+    <div className="bg-panel border border-border rounded-2xl p-4">
+      <h3 className="font-display font-semibold text-[16.5px] mb-3">Friend requests</h3>
+      <div className="divide-y divide-border">
+        {requests.map((r) => (
+          <div key={r._id} className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
+              {initials(r?.sender?.username)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate">{r?.sender?.username || "Someone"}</p>
+            </div>
+            <button
+              onClick={() => respond.mutate({ id: r._id, accept: true })}
+              className="bg-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
+            >
+              Accept
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FindPeopleWidget() {
+  return (
+    <div className="bg-panel border border-border rounded-2xl p-4">
+      <h3 className="font-display font-semibold text-[16.5px] mb-2">Find people</h3>
+      <p className="text-sm text-ink-soft mb-3">Search for friends, colleagues, or new connections.</p>
+      <Link
+        to="/search"
+        className="block text-center bg-primary-soft text-primary font-semibold text-sm rounded-lg py-2"
+      >
+        Search Connectly
+      </Link>
+    </div>
+  );
+}
+
+export default function Home() {
+  const { data, isLoading, isError } = usePosts();
+  const posts = ensureArray(data, ["posts", "docs"]);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,600px)_280px] gap-7">
+      <div>
+        <CreatePost />
+        <h2 className="font-display text-[21px] font-semibold mb-1">Your feed</h2>
+
+        {isLoading && <Loader />}
+        {isError && (
+          <p className="text-sm text-like py-6">Couldn't load the feed right now.</p>
+        )}
+        {!isLoading && !isError && posts.length === 0 && (
+          <p className="text-sm text-ink-faint py-8 text-center">
+            No posts yet — follow people or write the first one.
+          </p>
+        )}
+
+        {posts.map((post) => (
+          <PostCard key={post._id} post={post} />
+        ))}
+      </div>
+
+      <div className="hidden lg:flex flex-col gap-5">
+        <FriendRequestsWidget />
+        <FindPeopleWidget />
+      </div>
+    </div>
+  );
+}
