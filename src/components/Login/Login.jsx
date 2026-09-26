@@ -46,7 +46,7 @@ export default function Login() {
 
   return (
     <>
-      <h1 className="font-display text-2xl font-semibold mb-6">Log in</h1>
+      <h1 className="font-display text-2xl font-semibold text-center mb-6">Log in</h1>
 
       {apiError && (
         <div className="bg-like/10 text-like text-sm rounded-lg px-3.5 py-2.5 mb-4">{apiError}</div>
