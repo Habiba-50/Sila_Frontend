@@ -36,10 +36,12 @@ export default function Notifications() {
   });
 
   // Opening this page is treated as "seen" — clear the unread badge right away.
-  useEffect(() => {
-    markAllRead.mutate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(
+    () => {
+      markAllRead.mutate();
+    },
+    []
+  );
 
   const notifications = extractList(data);
 
@@ -47,12 +49,12 @@ export default function Notifications() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-display text-[21px] font-semibold">Notifications</h1>
-        <button
+        {/* <button
           onClick={() => markAllRead.mutate()}
           className="text-sm font-semibold text-primary"
         >
           Mark all as read
-        </button>
+        </button> */}
       </div>
 
       {isLoading && <Loader />}
