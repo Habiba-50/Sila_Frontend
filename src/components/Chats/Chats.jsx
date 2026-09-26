@@ -5,6 +5,7 @@ import { UserContext } from "../../context/UserContext";
 import Loader from "../Loader/Loader";
 import NewGroupModal from "./NewGroupModal";
 import { initials, ensureArray } from "../../utils/constants";
+import { extractList } from "../../utils/api";
 
 function timeAgo(dateStr) {
   if (!dateStr) return "";
@@ -20,8 +21,9 @@ export default function Chats() {
   const { userData } = useContext(UserContext);
   const [showNewGroup, setShowNewGroup] = useState(false);
   const { data, isLoading } = useMyChats({ page: 1, size: 20 });
-  const chats = ensureArray(data, ["chats", "docs"]);
+const chats = extractList(data);
 
+  
   return (
     <div>
       <div className="flex items-center justify-between mb-4">

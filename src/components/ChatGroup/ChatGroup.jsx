@@ -28,7 +28,7 @@ export default function ChatGroup() {
     queryKey: ["chat-group", id],
     queryFn: () => chatService.getGroup(id).then((r) => r.data),
   });
-  const group = data?.data ?? data?.group ?? data;
+  const group = extractItem(data);
 
   useEffect(() => {
     if (data) setMessages(data?.data?.messages ?? data?.messages ?? []);
@@ -113,7 +113,7 @@ export default function ChatGroup() {
     setAddTerm(value);
     if (!value.trim()) return setAddResults([]);
     const { data } = await searchUsers(value);
-    setAddResults(data?.data ?? data?.users ?? []);
+    setAddResults(extractList(data));
   }
 
   if (isLoading) return <Loader />;

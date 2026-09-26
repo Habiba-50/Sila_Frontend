@@ -7,6 +7,7 @@ import { sendFriendRequest, getMyFriends } from "../../services/friendRequestSer
 import toast from "react-hot-toast";
 import Loader from "../Loader/Loader";
 import { initials, ensureArray } from "../../utils/constants";
+import { extractList } from "../../utils/api";
 
 export default function SearchUsers() {
   const [term, setTerm] = useState("");
@@ -64,7 +65,7 @@ export default function SearchUsers() {
     onSuccess: () => toast.success("Friend request sent"),
   });
 
-  const results = ensureArray(data, ["users", "docs"]);
+  const results = extractList(data);
 
   return (
     <div>

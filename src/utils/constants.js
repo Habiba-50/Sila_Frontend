@@ -24,8 +24,8 @@ export function getReaction(value) {
 
 // Gender assumed numeric enum from the signup body ("gender": 1).
 export const GENDERS = [
-  { value: 1, label: "Male" },
-  { value: 2, label: "Female" },
+  { value: 0, label: "Male" },
+  { value: 1, label: "Female" },
 ];
 
 export function initials(name = "") {

@@ -15,7 +15,7 @@ export default function BlockedUsers() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["blocked-users"] }),
   });
 
-  const blocked = ensureArray(data, ["users", "docs"]);
+  const blocked = extractList(data);
 
   return (
     <div>

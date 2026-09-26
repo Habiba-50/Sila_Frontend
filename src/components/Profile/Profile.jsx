@@ -13,6 +13,7 @@ import PostCard from "../PostCard/PostCard";
 import Loader from "../Loader/Loader";
 import EditProfileForm from "./EditProfileForm";
 import { initials, ensureArray } from "../../utils/constants";
+import { extractList } from "../../utils/api";
 
 export default function Profile() {
   const { id } = useParams();
@@ -101,7 +102,7 @@ export default function Profile() {
   const requestId = friendStatusData?.data?.requestId ?? friendStatusData?.data?._id ?? friendStatusData?.requestId ?? id;
 
   const { data: postsData, isLoading: loadingPosts } = usePosts();
-  const allPosts = ensureArray(postsData, ["posts", "docs"]);
+  const allPosts = extractList(postsData);
   const userPosts = allPosts.filter((p) => p?.user?._id === (isSelf ? me?._id : profile?._id));
 
   const { data: followersData } = useFollowers({ page: 1, size: 50 }, isSelf && tab === "followers");
@@ -183,8 +184,8 @@ export default function Profile() {
     return <p className="text-sm text-ink-faint text-center py-12">Couldn't load this profile.</p>;
   }
 
-  const followers = ensureArray(followersData, ["followers", "docs"]);
-  const following = ensureArray(followingData, ["following", "docs"]);
+  const followers = extractList(followersData);
+  const following = extractList(followingData);
 
   return (
     <div>

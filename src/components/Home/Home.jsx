@@ -8,11 +8,12 @@ import PostCard from "../PostCard/PostCard";
 import Loader from "../Loader/Loader";
 import { initials, ensureArray } from "../../utils/constants";
 import React from "react"
+import { extractList } from "../../utils/api";
 
 function FriendRequestsWidget() {
   const { data, isLoading } = useFriendRequestsReceived({ page: 1, size: 3 });
   const queryClient = useQueryClient();
-  const requests = ensureArray(data, ["requests", "docs"]);
+  const requests = extractList(data);
 
   const respond = useMutation({
     mutationFn: ({ id, accept }) =>
@@ -67,7 +68,7 @@ function FindPeopleWidget() {
 
 export default function Home() {
   const { data, isLoading, isError } = usePosts();
-  const posts = ensureArray(data, ["posts", "docs"]);
+  const posts = extractList(data);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,600px)_280px] gap-7">

@@ -33,7 +33,7 @@ export default function Notifications() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
-  const notifications = ensureArray(data, ["notifications", "docs"]);
+  const notifications = extractList(data);
 
   return (
     <div>

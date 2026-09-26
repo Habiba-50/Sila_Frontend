@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { searchUsers } from "../../services/userService";
 import { createGroup } from "../../services/chatService";
 import { initials } from "../../utils/constants";
+import { extractList } from "../../utils/api";
 
 export default function NewGroupModal({ onClose }) {
   const [name, setName] = useState("");
@@ -16,7 +17,7 @@ export default function NewGroupModal({ onClose }) {
     setTerm(value);
     if (!value.trim()) return setResults([]);
     const { data } = await searchUsers(value);
-    setResults(data?.data ?? data?.users ?? []);
+    setResults(extractList(data));
   }
 
   function togglePick(user) {

@@ -15,6 +15,29 @@ export default function EditProfileForm({ onDone }) {
   const { userData, refreshProfile } = useContext(UserContext);
   const [avatarFile, setAvatarFile] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  // Cover photos upload immediately on selection (the backend takes them
+  // directly as multipart, unlike the profile picture's pre-signed-URL flow),
+  // so there's no need to wait for "Save changes".
+  async function handleCoverChange(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setUploadingCover(true);
+    try {
+      await userService.uploadCoverImages(files);
+      await refreshProfile();
+      toast.success("Cover photo updated");
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Couldn't upload the cover photo.",
+      );
+    } finally {
+      setUploadingCover(false);
+      e.target.value = ""; // allow re-selecting the same file later
+    }
+  }
 
   const formik = useFormik({
     initialValues: {
@@ -33,8 +56,9 @@ export default function EditProfileForm({ onDone }) {
             ContentType: avatarFile.type,
             Originalname: avatarFile.name,
           });
-          const uploadUrl = data?.data?.url ?? data?.url;
-          const key = data?.data?.key ?? data?.key;
+          // The backend returns { presignedUrl, Key } (capital K), not { url, key }.
+          const uploadUrl = data?.data?.presignedUrl ?? data?.presignedUrl;
+          const key = data?.data?.Key ?? data?.Key;
           if (uploadUrl) {
             await uploadFileToS3(uploadUrl, avatarFile);
             await userService.confirmProfileImage(key);
@@ -45,7 +69,9 @@ export default function EditProfileForm({ onDone }) {
         toast.success("Profile updated");
         onDone?.();
       } catch (error) {
-        toast.error(error?.response?.data?.message || "Couldn't save your profile.");
+        toast.error(
+          error?.response?.data?.message || "Couldn't save your profile.",
+        );
       } finally {
         setSaving(false);
       }
@@ -53,9 +79,32 @@ export default function EditProfileForm({ onDone }) {
   });
 
   return (
-    <form onSubmit={formik.handleSubmit} className="bg-panel border border-border rounded-2xl p-5 space-y-4 mb-5">
+    <form
+      onSubmit={formik.handleSubmit}
+      className="bg-panel border border-border rounded-2xl p-5 space-y-4 mb-5"
+    >
       <div>
-        <label className="block text-sm font-medium mb-1.5">Profile photo</label>
+        <label className="block text-sm font-medium mb-1.5">Cover photo</label>
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          disabled={uploadingCover}
+          onChange={handleCoverChange}
+          className="text-sm"
+        />
+        {uploadingCover && (
+          <p className="text-xs text-ink-faint mt-1">Uploading…</p>
+        )}
+        <p className="text-xs text-ink-faint mt-1">
+          Up to 2 images. Uploads right away.
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1.5">
+          Profile photo
+        </label>
         <input
           type="file"
           accept="image/*"
@@ -99,7 +148,11 @@ export default function EditProfileForm({ onDone }) {
       </div>
 
       <div className="flex gap-2 justify-end">
-        <button type="button" onClick={onDone} className="text-sm font-medium text-ink-soft px-4 py-2">
+        <button
+          type="button"
+          onClick={onDone}
+          className="text-sm font-medium text-ink-soft px-4 py-2"
+        >
           Cancel
         </button>
         <button

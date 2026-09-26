@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as friendRequestService from "../../services/friendRequestService";
 import Loader from "../Loader/Loader";
 import { initials, ensureArray } from "../../utils/constants";
+import { extractList } from "../../utils/api";
 
 export default function FriendRequests() {
   const [tab, setTab] = useState("received");
@@ -25,7 +26,7 @@ export default function FriendRequests() {
   const reject = useMutation({ mutationFn: friendRequestService.rejectFriendRequest, onSuccess: invalidate });
   const cancel = useMutation({ mutationFn: friendRequestService.cancelFriendRequest, onSuccess: invalidate });
 
-  const requests = ensureArray(data, ["requests", "docs"]);
+  const requests = extractList(data);
 
   return (
     <div>

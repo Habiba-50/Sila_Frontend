@@ -27,7 +27,7 @@ export function forgotPasswordOtp(values) {
 
 // PATCH /auth/verify-otp-password  { email, otp }
 export function verifyOtpPassword(values) {
-  return apiClient.patch("/auth/verify-otp-password", values);
+  return apiClient.post("/auth/verify-otp-password", values);
 }
 
 // PATCH /auth/reset-password  { email, password, confirmPassword }
