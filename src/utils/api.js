@@ -13,3 +13,11 @@ export function extractList(payload) {
 export function extractItem(payload) {
   return payload?.data ?? payload ?? null;
 }
+
+
+// Different models on this backend expose the Mongo id differently — some
+// keep `_id`, the Notification model only exposes `id`. Use this instead of
+// reaching for `.{_id}` directly on anything that came from the API.
+export function getId(obj) {
+  return obj?._id ?? obj?.id ?? null;
+}

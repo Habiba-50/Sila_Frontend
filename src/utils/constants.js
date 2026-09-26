@@ -37,27 +37,26 @@ export function initials(name = "") {
     .join("");
 }
 
-// Maps the backend's notification `type` field to something displayable.
-export const NOTIFICATION_TYPES = {
-  LIKE: { icon: "❤️", text: (n) => `${n?.sender?.username || "Someone"} reacted to your post` },
-  COMMENT: { icon: "💬", text: (n) => `${n?.sender?.username || "Someone"} commented on your post` },
-  REPLY: { icon: "↩️", text: (n) => `${n?.sender?.username || "Someone"} replied to your comment` },
-  TAG: { icon: "🏷️", text: (n) => `${n?.sender?.username || "Someone"} tagged you` },
-  MENTION: { icon: "@", text: (n) => `${n?.sender?.username || "Someone"} mentioned you` },
-  POST: { icon: "📝", text: (n) => `${n?.sender?.username || "Someone"} shared a new post` },
-  FOLLOW: { icon: "➕", text: (n) => `${n?.sender?.username || "Someone"} started following you` },
-  FRIEND_REQUEST: { icon: "🤝", text: (n) => `${n?.sender?.username || "Someone"} sent you a friend request` },
-  REPOST: { icon: "⤴️", text: (n) => `${n?.sender?.username || "Someone"} shared your post` },
-  GROUP_ADD: { icon: "👥", text: (n) => `${n?.sender?.username || "Someone"} added you to a group` },
-  NEW_LOGIN: { icon: "🔐", text: () => "New login to your account" },
-};
+// The backend's Notification model has no `type` field — it just sends a
+// ready-made `text` string (e.g. "New login from new device"). We only
+// pick an icon by matching keywords in that text, best-effort.
+const ICON_RULES = [
+  [/login/i, "🔐"],
+  [/friend request/i, "🤝"],
+  [/friend/i, "🤝"],
+  [/follow/i, "➕"],
+  [/repl/i, "↩️"],
+  [/comment/i, "💬"],
+  [/react|like/i, "❤️"],
+  [/repost|shared/i, "⤴️"],
+  [/group/i, "👥"],
+  [/tag|mention/i, "@"],
+];
 
 export function describeNotification(n) {
-  const meta = NOTIFICATION_TYPES[n?.type];
-  return {
-    icon: meta?.icon || "🔔",
-    text: meta ? meta.text(n) : n?.message || n?.content || "New activity",
-  };
+  const text = n?.text || n?.message || n?.content || "New activity";
+  const rule = ICON_RULES.find(([pattern]) => pattern.test(text));
+  return { icon: rule?.[1] || "🔔", text };
 }
 
 export function ensureArray(payload, preferredKeys = []) {
