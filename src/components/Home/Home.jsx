@@ -8,7 +8,7 @@ import PostCard from "../PostCard/PostCard";
 import Loader from "../Loader/Loader";
 import { initials, ensureArray } from "../../utils/constants";
 import React from "react"
-import { extractList } from "../../utils/api";
+import { extractList, getId } from "../../utils/api";
 
 function FriendRequestsWidget() {
   const { data, isLoading } = useFriendRequestsReceived({ page: 1, size: 3 });
@@ -31,7 +31,7 @@ function FriendRequestsWidget() {
       <h3 className="font-display font-semibold text-[16.5px] mb-3">Friend requests</h3>
       <div className="divide-y divide-border">
         {requests.map((r) => (
-          <div key={r._id} className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0">
+          <div key={getId(r)} className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
               {initials(r?.sender?.username)}
             </div>
@@ -39,7 +39,7 @@ function FriendRequestsWidget() {
               <p className="text-sm font-semibold truncate">{r?.sender?.username || "Someone"}</p>
             </div>
             <button
-              onClick={() => respond.mutate({ id: r._id, accept: true })}
+              onClick={() => respond.mutate({ id: getId(r), accept: true })}
               className="bg-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
             >
               Accept
@@ -87,7 +87,7 @@ export default function Home() {
         )}
 
         {posts.map((post) => (
-          <PostCard key={post._id} post={post} />
+          <PostCard key={getId(post)} post={post} />
         ))}
       </div>
 

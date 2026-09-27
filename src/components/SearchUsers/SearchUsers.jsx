@@ -7,7 +7,7 @@ import { sendFriendRequest, getMyFriends } from "../../services/friendRequestSer
 import toast from "react-hot-toast";
 import Loader from "../Loader/Loader";
 import { initials, ensureArray } from "../../utils/constants";
-import { extractList } from "../../utils/api";
+import { extractList, getId } from "../../utils/api";
 
 export default function SearchUsers() {
   const [term, setTerm] = useState("");
@@ -86,11 +86,11 @@ export default function SearchUsers() {
 
       <div className="divide-y divide-border">
         {results.map((u) => {
-          const isUserFollowing = Boolean(followingMap[u._id] ?? u.isFollowing ?? u.following);
-          const isUserFriend = Boolean(friendsMap[u._id] ?? myFriendIds.has(u._id) ?? u.isFriend ?? u.isFriends);
+          const isUserFollowing = Boolean(followingMap[getId(u)] ?? u.isFollowing ?? u.following);
+          const isUserFriend = Boolean(friendsMap[getId(u)] ?? myFriendIds.has(getId(u)) ?? u.isFriend ?? u.isFriends);
           return (
-            <div key={u._id} className="flex items-center gap-3 py-3">
-              <Link to={`/profile/${u._id}`} className="flex items-center gap-3 flex-1 min-w-0">
+            <div key={getId(u)} className="flex items-center gap-3 py-3">
+              <Link to={`/profile/${getId(u)}`} className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
                   {initials(u.username)}
                 </div>
@@ -100,7 +100,7 @@ export default function SearchUsers() {
                 </div>
               </Link>
               <button
-                onClick={() => followMutation.mutate(u._id)}
+                onClick={() => followMutation.mutate(getId(u))}
                 className={`text-xs font-semibold px-3 py-1.5 rounded-lg flex-shrink-0 transition-colors ${
                   isUserFollowing
                     ? "border border-border text-ink-soft hover:bg-black/5"
@@ -115,7 +115,7 @@ export default function SearchUsers() {
                 </span>
               ) : (
                 <button
-                  onClick={() => requestMutation.mutate(u._id)}
+                  onClick={() => requestMutation.mutate(getId(u))}
                   className="border border-border text-ink-soft text-xs font-semibold px-3 py-1.5 rounded-lg flex-shrink-0 hover:bg-black/5"
                 >
                   Add friend

@@ -10,7 +10,7 @@ import MessageBubble from "../Chat/MessageBubble";
 import ChatComposer from "../Chat/ChatComposer";
 import Loader from "../Loader/Loader";
 import { initials } from "../../utils/constants";
-import { extractItem } from "../../utils/api";
+import { extractItem, getId } from "../../utils/api";
 
 export default function ChatGroup() {
   const { id } = useParams();
@@ -138,13 +138,13 @@ export default function ChatGroup() {
         <div className="bg-panel border border-border rounded-2xl p-4 mb-3">
           <div className="divide-y divide-border">
             {group?.participants?.map((m) => (
-              <div key={m._id} className="flex items-center gap-2.5 py-2">
+              <div key={getId(m)} className="flex items-center gap-2.5 py-2">
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-[10px] font-semibold">
                   {initials(m.username)}
                 </div>
                 <span className="text-sm flex-1">{m.username}</span>
-                {m._id !== userData?._id && (
-                  <button onClick={() => removeMember.mutate(m._id)} className="text-xs text-ink-faint hover:text-like">Remove</button>
+                {getId(m) !== getId(userData) && (
+                  <button onClick={() => removeMember.mutate(getId(m))} className="text-xs text-ink-faint hover:text-like">Remove</button>
                 )}
               </div>
             ))}
@@ -156,7 +156,7 @@ export default function ChatGroup() {
             className="w-full border border-border rounded-lg px-3 py-2 text-sm mt-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {addResults.map((u) => (
-            <button key={u._id} onClick={() => addMember.mutate(u._id)} className="w-full flex items-center gap-2 py-1.5 text-left">
+            <button key={getId(u)} onClick={() => addMember.mutate(getId(u))} className="w-full flex items-center gap-2 py-1.5 text-left">
               <span className="text-sm">{u.username}</span>
             </button>
           ))}
@@ -170,7 +170,7 @@ export default function ChatGroup() {
       <div className="flex-1 overflow-y-auto space-y-2 py-2">
         {messages.length === 0 && <p className="text-sm text-ink-faint text-center py-10">No messages yet.</p>}
         {messages.map((m) => (
-          <MessageBubble key={m._id} message={m} onReply={setReplyingTo} onEdit={setEditingMessage} onDelete={deleteMessage} onReact={reactToMessage} />
+          <MessageBubble key={getId(m)} message={m} onReply={setReplyingTo} onEdit={setEditingMessage} onDelete={deleteMessage} onReact={reactToMessage} />
         ))}
         <div ref={bottomRef} />
       </div>

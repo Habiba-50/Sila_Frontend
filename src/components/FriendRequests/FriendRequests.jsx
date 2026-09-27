@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as friendRequestService from "../../services/friendRequestService";
 import Loader from "../Loader/Loader";
 import { initials, ensureArray } from "../../utils/constants";
-import { extractList } from "../../utils/api";
+import { extractList, getId } from "../../utils/api";
 
 export default function FriendRequests() {
   const [tab, setTab] = useState("received");
@@ -55,7 +55,7 @@ export default function FriendRequests() {
         {requests.map((r) => {
           const person = tab === "received" ? r.sender : r.receiver;
           return (
-            <div key={r._id} className="flex items-center gap-3 py-3">
+            <div key={getId(r)} className="flex items-center gap-3 py-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-sm font-semibold">
                 {initials(person?.username)}
               </div>
@@ -64,13 +64,13 @@ export default function FriendRequests() {
               {tab === "received" ? (
                 <div className="flex gap-2">
                   <button
-                    onClick={() => accept.mutate(r._id)}
+                    onClick={() => accept.mutate(getId(r))}
                     className="bg-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
                   >
                     Accept
                   </button>
                   <button
-                    onClick={() => reject.mutate(r._id)}
+                    onClick={() => reject.mutate(getId(r))}
                     className="border border-border text-ink-soft text-xs font-semibold px-3 py-1.5 rounded-lg"
                   >
                     Decline
@@ -78,7 +78,7 @@ export default function FriendRequests() {
                 </div>
               ) : (
                 <button
-                  onClick={() => cancel.mutate(r._id)}
+                  onClick={() => cancel.mutate(getId(r))}
                   className="border border-border text-ink-soft text-xs font-semibold px-3 py-1.5 rounded-lg"
                 >
                   Cancel

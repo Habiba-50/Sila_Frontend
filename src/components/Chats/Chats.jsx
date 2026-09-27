@@ -1,11 +1,12 @@
-import { useContext, useState } from "react";
+import React ,{ useContext, useState } from "react";
 import { Link } from "react-router-dom";
 import useMyChats from "../../Hooks/useMyChats";
 import { UserContext } from "../../context/UserContext";
 import Loader from "../Loader/Loader";
 import NewGroupModal from "./NewGroupModal";
-import { initials, ensureArray } from "../../utils/constants";
-import { extractList } from "../../utils/api";
+import { initials} from "../../utils/constants";
+import { extractList} from "../../utils/api";
+import { fileUrl } from "../../services/fileService";
 
 function timeAgo(dateStr) {
   if (!dateStr) return "";
@@ -18,12 +19,10 @@ function timeAgo(dateStr) {
 }
 
 export default function Chats() {
-  const { userData } = useContext(UserContext);
   const [showNewGroup, setShowNewGroup] = useState(false);
   const { data, isLoading } = useMyChats({ page: 1, size: 20 });
-const chats = extractList(data);
+  const chats = extractList(data);
 
-  
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -46,27 +45,31 @@ const chats = extractList(data);
 
       <div className="divide-y divide-border">
         {chats.map((chat) => {
-          const isGroup = !!chat.isGroup || !!chat.name;
-          const other = !isGroup
-            ? chat.participants?.find((m) => m._id !== userData?._id || chat.createdBy)
-            : null;
-          const title = isGroup ? chat.name : other?.username || "Conversation";
-          const lastMessage = chat.lastMessage?.content || chat.lastMessage || "No messages yet";
+          // type: "ovm" = one-vs-many (group), "ovo" = one-vs-one (direct)
+          const isGroup = chat.type === "ovm";
+          const title = chat.displayName?.trim() || "Conversation";
+          const lastMessage = chat.lastMessage?.content || "No messages yet";
+          const avatarUrl = chat.displayImage ? fileUrl(chat.displayImage) : null;
 
           return (
             <Link
-              key={chat._id}
-              to={isGroup ? `/chats/group/${chat._id}` : `/chats/user/${other?._id}`}
+              key={chat.chatId}
+              to={isGroup ? `/chats/group/${chat.chatId}` : `/chats/user/${chat.otherUserId}`}
+              state={{ title, avatarUrl }}
               className="flex items-center gap-3 py-3.5 hover:bg-black/[0.02] -mx-1 px-1 rounded-lg"
             >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                {initials(title)}
-              </div>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                  {initials(title)}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="font-semibold text-[15px] truncate">{title}</p>
                   <span className="text-xs text-ink-faint flex-shrink-0">
-                    {timeAgo(chat.updatedAt || chat.lastMessage?.createdAt)}
+                    {timeAgo(chat.lastMessage?.createdAt)}
                   </span>
                 </div>
                 <p className="text-sm text-ink-faint truncate">{lastMessage}</p>

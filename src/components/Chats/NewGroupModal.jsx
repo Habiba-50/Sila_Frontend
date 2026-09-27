@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { searchUsers } from "../../services/userService";
 import { createGroup } from "../../services/chatService";
 import { initials } from "../../utils/constants";
-import { extractList } from "../../utils/api";
+import { extractList, getId } from "../../utils/api";
 
 export default function NewGroupModal({ onClose }) {
   const [name, setName] = useState("");
@@ -22,12 +22,12 @@ export default function NewGroupModal({ onClose }) {
 
   function togglePick(user) {
     setPicked((p) =>
-      p.some((u) => u._id === user._id) ? p.filter((u) => u._id !== user._id) : [...p, user]
+      p.some((u) => getId(u) === getId(user)) ? p.filter((u) => getId(u) !== getId(user)) : [...p, user]
     );
   }
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => createGroup({ groupName: name, participantsIds: picked.map((u) => u._id) }),
+    mutationFn: () => createGroup({ groupName: name, participantsIds: picked.map((u) => getId(u)) }),
     onSuccess: () => {
       toast.success("Group created");
       queryClient.invalidateQueries({ queryKey: ["my-chats"] });
@@ -61,7 +61,7 @@ export default function NewGroupModal({ onClose }) {
         {picked.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {picked.map((u) => (
-              <span key={u._id} className="bg-primary-soft text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
+              <span key={getId(u)} className="bg-primary-soft text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
                 {u.username} ✕
               </span>
             ))}
@@ -71,7 +71,7 @@ export default function NewGroupModal({ onClose }) {
         <div className="max-h-44 overflow-y-auto divide-y divide-border mb-4">
           {results.map((u) => (
             <button
-              key={u._id}
+              key={getId(u)}
               onClick={() => togglePick(u)}
               className="w-full flex items-center gap-2.5 py-2 text-left"
             >

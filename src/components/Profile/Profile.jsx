@@ -15,6 +15,7 @@ import EditProfileForm from "./EditProfileForm";
 import { initials, ensureArray } from "../../utils/constants";
 import { extractList } from "../../utils/api";
 import { fileUrl } from "../../services/fileService";
+import { getId } from "../../utils/api";
 
 export default function Profile() {
   const { id } = useParams();
@@ -27,7 +28,7 @@ export default function Profile() {
   const [localFriendStatus, setLocalFriendStatus] = useState(null);
   const queryClient = useQueryClient();
 
-  const isSelf = !id || id === me?._id;
+  const isSelf = !id || id === getId(me);
 
   useEffect(() => {
     setLocalFollowing(null);
@@ -100,11 +101,11 @@ export default function Profile() {
   }
 
   const friendStatus = localFriendStatus !== null ? localFriendStatus : detectedFriendStatus;
-  const requestId = friendStatusData?.data?.requestId ?? friendStatusData?.data?._id ?? friendStatusData?.requestId ?? id;
+  const requestId = getId(friendStatusData?.data) ?? friendStatusData?.data?.requestId ?? friendStatusData?.requestId ?? id;
 
   const { data: postsData, isLoading: loadingPosts } = usePosts();
   const allPosts = extractList(postsData);
-  const userPosts = allPosts.filter((p) => p?.user?._id === (isSelf ? me?._id : profile?._id));
+  const userPosts = allPosts.filter((p) => getId(p?.user) === (isSelf ? getId(me) : getId(profile)));
 
   const { data: followersData } = useFollowers({ page: 1, size: 50 }, isSelf && tab === "followers");
   const { data: followingData } = useFollowing({ page: 1, size: 50 }, isSelf && tab === "following");
@@ -323,7 +324,7 @@ export default function Profile() {
               <p className="text-sm text-ink-faint text-center py-10">No posts yet.</p>
             )}
             {userPosts.map((post) => (
-              <PostCard key={post._id} post={post} />
+              <PostCard key={getId(post)} post={post} />
             ))}
           </>
         )}
@@ -331,7 +332,7 @@ export default function Profile() {
         {isSelf && tab === "followers" && (
           <div className="divide-y divide-border">
             {followers.map((f) => (
-              <div key={f._id} className="flex items-center gap-3 py-3">
+              <div key={getId(f)} className="flex items-center gap-3 py-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-sm font-semibold">
                   {initials(f.username)}
                 </div>
@@ -345,7 +346,7 @@ export default function Profile() {
         {isSelf && tab === "following" && (
           <div className="divide-y divide-border">
             {following.map((f) => (
-              <div key={f._id} className="flex items-center gap-3 py-3">
+              <div key={getId(f)} className="flex items-center gap-3 py-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-sm font-semibold">
                   {initials(f.username)}
                 </div>

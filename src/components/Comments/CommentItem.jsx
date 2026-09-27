@@ -4,6 +4,7 @@ import * as commentService from "../../services/commentService";
 import { UserContext } from "../../context/UserContext";
 import ReactionButton from "../ReactionButton/ReactionButton";
 import { initials } from "../../utils/constants";
+import { getId } from "../../utils/api";
 
 export default function CommentItem({ postId, comment }) {
   const { userData } = useContext(UserContext);
@@ -17,12 +18,12 @@ export default function CommentItem({ postId, comment }) {
   }
 
   const reactMutation = useMutation({
-    mutationFn: (value) => commentService.reactToComment(postId, comment._id, value),
+    mutationFn: (value) => commentService.reactToComment(postId, getId(comment), value),
     onSuccess: invalidate,
   });
 
   const replyMutation = useMutation({
-    mutationFn: () => commentService.replyToComment(postId, comment._id, { content: replyText }),
+    mutationFn: () => commentService.replyToComment(postId, getId(comment), { content: replyText }),
     onSuccess: () => {
       setReplyText("");
       setReplying(false);
@@ -31,7 +32,7 @@ export default function CommentItem({ postId, comment }) {
   });
 
   const replyReact = (replyId, value) =>
-    commentService.reactToReply(postId, comment._id, replyId, value).then(invalidate);
+    commentService.reactToReply(postId, getId(comment), replyId, value).then(invalidate);
 
   const commentUserReaction = Array.isArray(comment?.reactions)
     ? comment.reactions.find(
@@ -77,7 +78,7 @@ export default function CommentItem({ postId, comment }) {
                 const replyMyReaction = reply?.myReaction ?? replyUserReaction?.react ?? replyUserReaction?.type ?? replyUserReaction?.reaction;
 
                 return (
-                  <div key={reply._id} className="flex gap-2">
+                  <div key={getId(reply)} className="flex gap-2">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-[9px] font-semibold flex-shrink-0">
                       {initials(reply?.user?.username)}
                     </div>
@@ -89,7 +90,7 @@ export default function CommentItem({ postId, comment }) {
                       <ReactionButton
                         count={reply?.reactions?.length}
                         myReaction={replyMyReaction}
-                        onReact={(v) => replyReact(reply._id, v)}
+                        onReact={(v) => replyReact(getId(reply), v)}
                       />
                     </div>
                   </div>

@@ -1,5 +1,6 @@
 import { useContext, useState } from "react";
 import { UserContext } from "../../context/UserContext";
+import { getId } from "../../utils/api";
 
 // The ⋮ menu on a message: React / Reply / Edit / Delete.
 // NOTE: the realtime docs only document the *broadcast* events
@@ -10,7 +11,7 @@ import { UserContext } from "../../context/UserContext";
 export default function MessageBubble({ message, onReply, onEdit, onDelete, onReact }) {
   const { userData } = useContext(UserContext);
   const [menuOpen, setMenuOpen] = useState(false);
-  const isMine = (message.from?._id || message.sender?._id || message.senderId) === userData?._id;
+  const isMine = (getId(message.from) || getId(message.sender) || message.senderId) === getId(userData);
 
   return (
     <div className={`flex ${isMine ? "justify-end" : "justify-start"} group px-1`}>

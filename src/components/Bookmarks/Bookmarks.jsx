@@ -3,6 +3,7 @@ import { getMySavedPosts } from "../../services/bookmarkService";
 import PostCard from "../PostCard/PostCard";
 import Loader from "../Loader/Loader";
 import { ensureArray } from "../../utils/constants";
+import { getId } from "../../utils/api";
 
 export default function Bookmarks() {
   const { data, isLoading } = useQuery({
@@ -21,7 +22,7 @@ export default function Bookmarks() {
         <p className="text-sm text-ink-faint text-center py-10">Nothing saved yet.</p>
       )}
       {posts.map((post) => (
-        <PostCard key={post._id} post={{ ...post, isBookmarked: true }} />
+        <PostCard key={getId(post)} post={{ ...post, isBookmarked: true }} />
       ))}
     </div>
   );

@@ -8,8 +8,9 @@ import * as bookmarkService from "../../services/bookmarkService";
 import { UserContext } from "../../context/UserContext";
 import ReactionButton from "../ReactionButton/ReactionButton";
 import Comments from "../Comments/Comments";
-import { initials } from "../../utils/constants";
+import { initials} from "../../utils/constants";
 import { extractPostImages } from "../../services/fileService";
+import { getId } from "../../utils/api";
 
 function timeAgo(dateStr) {
   if (!dateStr) return "";
@@ -28,7 +29,7 @@ export default function PostCard({ post }) {
   const queryClient = useQueryClient();
 
   const author = post?.createdBy || {};
-  const isOwner = author?._id === userData?._id;
+  const isOwner = getId(author) === getId(userData);
 
   const userReaction = Array.isArray(post?.reactions)
     ? post.reactions.find(
@@ -42,12 +43,12 @@ export default function PostCard({ post }) {
   }
 
   const reactMutation = useMutation({
-    mutationFn: (value) => postService.reactToPost(post._id, value),
+    mutationFn: (value) => postService.reactToPost(getId(post), value),
     onSuccess: invalidate,
   });
 
   const repostMutation = useMutation({
-    mutationFn: () => repostService.sharePost(post._id),
+    mutationFn: () => repostService.sharePost(getId(post)),
     onSuccess: () => {
       toast.success("Shared to your profile");
       invalidate();
@@ -58,13 +59,13 @@ export default function PostCard({ post }) {
   const bookmarkMutation = useMutation({
     mutationFn: () =>
       post.isBookmarked
-        ? bookmarkService.unsavePost(post._id)
-        : bookmarkService.savePost(post._id),
+        ? bookmarkService.unsavePost(getId(post))
+        : bookmarkService.savePost(getId(post)),
     onSuccess: invalidate,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => postService.deletePost(post._id),
+    mutationFn: () => postService.deletePost(getId(post)),
     onSuccess: () => {
       toast.success("Post deleted");
       invalidate();
@@ -84,7 +85,7 @@ export default function PostCard({ post }) {
       )}
 
       <div className="flex gap-3">
-        <Link to={`/profile/${author._id}`} className="flex-shrink-0">
+        <Link to={`/profile/${getId(author)}`} className="flex-shrink-0">
           <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-sm font-semibold">
             {initials(author?.username)}
           </div>
@@ -92,7 +93,7 @@ export default function PostCard({ post }) {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 flex-wrap">
-            <Link to={`/profile/${author._id}`} className="font-semibold text-[15px] hover:underline">
+            <Link to={`/profile/${getId(author)}`} className="font-semibold text-[15px] hover:underline">
               {author?.username || "Member"}
             </Link>
             <span className="text-ink-faint text-[13.5px]">· {timeAgo(post?.createdAt)}</span>
@@ -161,7 +162,7 @@ export default function PostCard({ post }) {
             </button>
           </div>
 
-          {showComments && <Comments postId={post._id} comments={post?.comments || []} />}
+          {showComments && <Comments postId={getId(post)} comments={post?.comments || []} />}
         </div>
       </div>
     </article>

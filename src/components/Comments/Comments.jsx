@@ -4,6 +4,7 @@ import * as commentService from "../../services/commentService";
 import { UserContext } from "../../context/UserContext";
 import CommentItem from "./CommentItem";
 import { initials } from "../../utils/constants";
+import { getId } from "../../utils/api";
 
 // NOTE: the Postman collection doesn't expose a "list comments for a post"
 // endpoint — this assumes the post document already comes back populated
@@ -53,7 +54,7 @@ export default function Comments({ postId, comments = [] }) {
           <p className="text-sm text-ink-faint py-3">Be the first to comment.</p>
         )}
         {commentList.map((c) => (
-          <CommentItem key={c._id} postId={postId} comment={c} />
+          <CommentItem key={getId(c)} postId={postId} comment={c} />
         ))}
       </div>
     </div>

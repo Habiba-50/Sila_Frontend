@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import * as chatService from "../../services/chatService";
@@ -10,9 +10,13 @@ import MessageBubble from "../Chat/MessageBubble";
 import ChatComposer from "../Chat/ChatComposer";
 import Loader from "../Loader/Loader";
 import { initials } from "../../utils/constants";
+import { getId } from "../../utils/api";
 
 export default function ChatDirect() {
   const { userId } = useParams();
+    const location = useLocation();
+  const passedTitle = location.state?.title;
+  const passedAvatar = location.state?.avatarUrl;
   const { userData: me } = useContext(UserContext);
   const [messages, setMessages] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null);
@@ -22,7 +26,12 @@ export default function ChatDirect() {
   const { data: otherUser } = useQuery({
     queryKey: ["user", userId],
     queryFn: () => userService.getUserById(userId).then((r) => r.data?.data ?? r.data),
+    enabled: !passedTitle,
+    retry: false,
   });
+
+  const displayTitle = passedTitle || otherUser?.username || "Conversation";
+  const displayAvatar = passedAvatar || null;
 
   const { data: history, isLoading } = useQuery({
     queryKey: ["direct-chat", userId],
@@ -44,15 +53,15 @@ export default function ChatDirect() {
     if (!socket) return;
 
     function handleNewMessage(msg) {
-      if (msg.sendTo === userId || msg.from?._id === userId || msg.from === userId) {
+      if (msg.sendTo === userId || getId(msg.from) === userId || msg.from === userId) {
         setMessages((prev) => [...prev, msg]);
       }
     }
     function handleEdited({ messageId, content }) {
-      setMessages((prev) => prev.map((m) => (m._id === messageId ? { ...m, content, edited: true } : m)));
+      setMessages((prev) => prev.map((m) => (getId(m) === messageId ? { ...m, content, edited: true } : m)));
     }
     function handleDeleted({ messageId }) {
-      setMessages((prev) => prev.filter((m) => m._id !== messageId));
+      setMessages((prev) => prev.filter((m) => getId(m) !== messageId));
     }
     function handleError(err) {
       toast.error(err?.message || "Something went wrong with that message.");
@@ -76,7 +85,7 @@ export default function ChatDirect() {
     socket?.emit("sendMessage", { sendTo: userId, content });
     setMessages((prev) => [
       ...prev,
-      { _id: `local-${Date.now()}`, content, from: { _id: me?._id, username: me?.username }, createdAt: new Date().toISOString() },
+      { _id: `local-${Date.now()}`, content, from: { _id: getId(me), username: me?.username }, createdAt: new Date().toISOString() },
     ]);
     setReplyingTo(null);
   }
@@ -84,33 +93,37 @@ export default function ChatDirect() {
   function submitEdit(text) {
     const socket = getSocket();
     // ASSUMPTION: emit name not documented — verify against your backend.
-    socket.emit("editMessage", { chatId: history?.data?._id, messageId, content })
-    setMessages((prev) => prev.map((m) => (m._id === editingMessage._id ? { ...m, content: text, edited: true } : m)));
+    socket.emit("editMessage", { chatId: history?.data?._id, messageId: getId(editingMessage), content: text })
+    setMessages((prev) => prev.map((m) => (getId(m) === getId(editingMessage) ? { ...m, content: text, edited: true } : m)));
     setEditingMessage(null);
   }
 
   function deleteMessage(message) {
     const socket = getSocket();
     // ASSUMPTION: emit name not documented — verify against your backend.
-    socket?.emit("deleteMessage", { messageId: message._id });
-    setMessages((prev) => prev.filter((m) => m._id !== message._id));
+    socket?.emit("deleteMessage", { messageId: getId(message) });
+    setMessages((prev) => prev.filter((m) => getId(m) !== getId(message)));
   }
 
   function reactToMessage(message, react) {
     const socket = getSocket();
     // ASSUMPTION: message-level reactions aren't documented at all (only
     // post reactions are) — this is a best-effort emit, verify/replace.
-    socket?.emit("reactMessage", { messageId: message._id, react });
+    socket?.emit("reactMessage", { messageId: getId(message), react });
   }
 
   return (
     <div className="flex flex-col h-[calc(100vh-160px)]">
       <div className="flex items-center gap-3 pb-3 border-b border-border mb-3">
         <Link to="/chats" className="text-ink-faint lg:hidden">←</Link>
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-sm font-semibold">
-          {initials(otherUser?.username)}
-        </div>
-        <p className="font-semibold text-[15px]">{otherUser?.username || "Conversation"}</p>
+        {displayAvatar ? (
+          <img src={displayAvatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-sm font-semibold">
+            {initials(displayTitle)}
+          </div>
+        )}
+        <p className="font-semibold text-[15px]">{displayTitle}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-2 py-2">
@@ -120,7 +133,7 @@ export default function ChatDirect() {
         )}
         {messages.map((m) => (
           <MessageBubble
-            key={m._id}
+            key={getId(m)}
             message={m}
             onReply={setReplyingTo}
             onEdit={setEditingMessage}
@@ -142,3 +155,4 @@ export default function ChatDirect() {
     </div>
   );
 }
+
