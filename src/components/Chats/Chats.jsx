@@ -48,7 +48,7 @@ const chats = extractList(data);
         {chats.map((chat) => {
           const isGroup = !!chat.isGroup || !!chat.name;
           const other = !isGroup
-            ? chat.members?.find((m) => m._id !== userData?._id)
+            ? chat.participants?.find((m) => m._id !== userData?._id || chat.createdBy)
             : null;
           const title = isGroup ? chat.name : other?.username || "Conversation";
           const lastMessage = chat.lastMessage?.content || chat.lastMessage || "No messages yet";

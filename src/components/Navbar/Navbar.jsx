@@ -79,9 +79,9 @@ export default function Navbar() {
           >
             <NavIcon label={l.label} />
             <span className="hidden lg:inline">{l.label}</span>
-            {l.label === "Notifications" && unread > 0 && (
+            {l.label === "Notifications" && unread?.count > 0 && (
               <span className="absolute top-1 left-6 lg:static lg:ml-auto bg-like text-white text-[10px] font-bold rounded-full min-w-[17px] h-[17px] px-1 flex items-center justify-center">
-                {unread}
+                {unread?.count > 99 ? "99+" : unread?.count}
               </span>
             )}
           </NavLink>

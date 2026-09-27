@@ -84,7 +84,7 @@ export default function ChatDirect() {
   function submitEdit(text) {
     const socket = getSocket();
     // ASSUMPTION: emit name not documented — verify against your backend.
-    socket?.emit("editMessage", { messageId: editingMessage._id, content: text });
+    socket.emit("editMessage", { chatId: history?.data?._id, messageId, content })
     setMessages((prev) => prev.map((m) => (m._id === editingMessage._id ? { ...m, content: text, edited: true } : m)));
     setEditingMessage(null);
   }

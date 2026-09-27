@@ -2,11 +2,7 @@ import apiClient from "./apiClient";
 
 // POST /post  (FormData: content, attachments...)
 export function createPost(formData) {
-  return apiClient.post("/post", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  return apiClient.post("/post", formData);
 }
 
 // PATCH /post/:id

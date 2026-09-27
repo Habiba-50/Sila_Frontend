@@ -2,7 +2,7 @@ import apiClient from "./apiClient";
 
 // POST /chat/group  { name, members: [] }
 export function createGroup(values) {
-  return apiClient.post("/chat/group", values);
+  return apiClient.post("/user/chat/group", values);
 }
 
 // GET /user/chat/group/:groupId

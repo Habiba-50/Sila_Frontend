@@ -27,7 +27,7 @@ export default function PostCard({ post }) {
   const [showComments, setShowComments] = useState(false);
   const queryClient = useQueryClient();
 
-  const author = post?.user || {};
+  const author = post?.createdBy || {};
   const isOwner = author?._id === userData?._id;
 
   const userReaction = Array.isArray(post?.reactions)

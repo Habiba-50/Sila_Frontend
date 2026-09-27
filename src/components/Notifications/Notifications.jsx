@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as notificationService from "../../services/notificationService";
 import Loader from "../Loader/Loader";
@@ -22,11 +22,14 @@ export default function Notifications() {
     queryFn: () => notificationService.getNotifications({ page: 1, limit: 20 }).then((r) => r.data),
   });
 
-  const markAllRead = useMutation({
+    const markAllRead = useMutation({
     mutationFn: notificationService.markAllAsRead,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["unread-count"] });
+    },
+    onError: (error) => {
+      console.error("mark-all-as-read failed:", error?.response?.status, error?.response?.data || error);
     },
   });
 
@@ -35,13 +38,13 @@ export default function Notifications() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
-  // Opening this page is treated as "seen" — clear the unread badge right away.
-  useEffect(
-    () => {
-      markAllRead.mutate();
-    },
-    []
-  );
+  const hasMarkedRef = useRef(false);
+  useEffect(() => {
+    if (hasMarkedRef.current) return;
+    hasMarkedRef.current = true;
+    markAllRead.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const notifications = extractList(data);
 

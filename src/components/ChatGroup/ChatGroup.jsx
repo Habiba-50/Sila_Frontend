@@ -10,6 +10,7 @@ import MessageBubble from "../Chat/MessageBubble";
 import ChatComposer from "../Chat/ChatComposer";
 import Loader from "../Loader/Loader";
 import { initials } from "../../utils/constants";
+import { extractItem } from "../../utils/api";
 
 export default function ChatGroup() {
   const { id } = useParams();
@@ -126,7 +127,7 @@ export default function ChatGroup() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[15px] truncate">{group?.name}</p>
-          <p className="text-xs text-ink-faint">{group?.members?.length || 0} members</p>
+          <p className="text-xs text-ink-faint">{group?.participants?.length || 0} members</p>
         </div>
         <button onClick={() => setShowMembers((s) => !s)} className="text-sm font-medium text-primary flex-shrink-0">
           {showMembers ? "Hide" : "Members"}
@@ -136,7 +137,7 @@ export default function ChatGroup() {
       {showMembers && (
         <div className="bg-panel border border-border rounded-2xl p-4 mb-3">
           <div className="divide-y divide-border">
-            {group?.members?.map((m) => (
+            {group?.participants?.map((m) => (
               <div key={m._id} className="flex items-center gap-2.5 py-2">
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-[10px] font-semibold">
                   {initials(m.username)}

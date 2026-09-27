@@ -27,7 +27,7 @@ export default function NewGroupModal({ onClose }) {
   }
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => createGroup({ name, members: picked.map((u) => u._id) }),
+    mutationFn: () => createGroup({ groupName: name, participantsIds: picked.map((u) => u._id) }),
     onSuccess: () => {
       toast.success("Group created");
       queryClient.invalidateQueries({ queryKey: ["my-chats"] });

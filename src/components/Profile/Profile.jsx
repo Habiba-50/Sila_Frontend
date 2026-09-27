@@ -14,6 +14,7 @@ import Loader from "../Loader/Loader";
 import EditProfileForm from "./EditProfileForm";
 import { initials, ensureArray } from "../../utils/constants";
 import { extractList } from "../../utils/api";
+import { fileUrl } from "../../services/fileService";
 
 export default function Profile() {
   const { id } = useParams();
@@ -189,19 +190,35 @@ export default function Profile() {
 
   return (
     <div>
-      <div className="h-36 sm:h-44 rounded-2xl bg-gradient-to-br from-primary-soft to-border" />
+      <div className="h-36 sm:h-44 rounded-2xl bg-gradient-to-br from-primary-soft to-border overflow-hidden">
+        {profile.profileCoveredPictures?.[0] && (
+          <img
+            src={fileUrl(profile.profileCoveredPictures[0])}
+            alt=""
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
       <div className="flex items-end gap-4 -mt-10 ml-4">
-        <div className="w-24 h-24 rounded-full ring-4 ring-bg bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-2xl font-semibold">
-          {initials(profile.username)}
+        <div className="w-24 h-24 rounded-full ring-4 ring-bg overflow-hidden bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-2xl font-semibold">
+          {profile.profilePicture ? (
+            <img
+              src={fileUrl(profile.profilePicture)}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            initials(profile.username)
+          )}
         </div>
       </div>
-
+ 
       <div className="mt-3 px-1 flex items-start justify-between gap-3">
         <div>
           <h1 className="font-display text-xl font-semibold">{profile.username}</h1>
           {profile.bio && <p className="text-sm text-ink-soft mt-1">{profile.bio}</p>}
         </div>
-
+ 
         {isSelf ? (
           <button
             onClick={() => setEditing((e) => !e)}
@@ -219,7 +236,7 @@ export default function Profile() {
             >
               {isFollowing ? "Following" : "Follow"}
             </button>
-
+ 
             {friendStatus === "none" && (
               <button onClick={() => addFriendMutation.mutate()} className="border border-border text-sm font-semibold px-4 py-2 rounded-lg">
                 Add friend
@@ -253,7 +270,7 @@ export default function Profile() {
                 </button>
               </>
             )}
-
+ 
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((o) => !o)}
@@ -275,13 +292,13 @@ export default function Profile() {
           </div>
         )}
       </div>
-
+ 
       {editing && (
         <div className="mt-5">
           <EditProfileForm onDone={() => setEditing(false)} />
         </div>
       )}
-
+ 
       {isSelf && (
         <div className="flex gap-1 border-b border-border mt-6 mb-1">
           {["posts", "followers", "following"].map((t) => (
@@ -297,7 +314,7 @@ export default function Profile() {
           ))}
         </div>
       )}
-
+ 
       <div className="mt-4">
         {(!isSelf || tab === "posts") && (
           <>
@@ -310,7 +327,7 @@ export default function Profile() {
             ))}
           </>
         )}
-
+ 
         {isSelf && tab === "followers" && (
           <div className="divide-y divide-border">
             {followers.map((f) => (
@@ -324,7 +341,7 @@ export default function Profile() {
             {followers.length === 0 && <p className="text-sm text-ink-faint py-6">No followers yet.</p>}
           </div>
         )}
-
+ 
         {isSelf && tab === "following" && (
           <div className="divide-y divide-border">
             {following.map((f) => (

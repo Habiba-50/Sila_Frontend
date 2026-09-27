@@ -17,8 +17,7 @@ export default function UserContextProvider({ children }) {
   async function fetchProfile() {
     try {
       const { data } = await userService.getProfile();
-      setUserData(data?.data ?? data?.user ?? data);
-    } catch (error) {
+setUserData(data?.data?.user ?? data?.data ?? data?.user ?? data);    } catch (error) {
       // token expired / invalid -> force logout
       logout();
     } finally {

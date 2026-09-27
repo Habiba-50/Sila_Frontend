@@ -37,5 +37,7 @@ export function resetPassword(values) {
 
 // POST /rotate-token
 export function rotateToken() {
-  return apiClient.post("/rotate-token");
+  return apiClient.post("/user/rotate-token");
 }
+
+
