@@ -106,7 +106,6 @@ export default function Profile() {
   const { data: postsData, isLoading: loadingPosts } = usePosts();
   const allPosts = extractList(postsData);
   const userPosts = allPosts.filter((p) => getId(p?.user) === (isSelf ? getId(me) : getId(profile)));
-
   const { data: followersData } = useFollowers({ page: 1, size: 50 }, isSelf && tab === "followers");
   const { data: followingData } = useFollowing({ page: 1, size: 50 }, isSelf && tab === "following");
 
