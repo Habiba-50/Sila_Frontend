@@ -10,7 +10,7 @@ import ReactionButton from "../ReactionButton/ReactionButton";
 import Comments from "../Comments/Comments";
 import { initials} from "../../utils/constants";
 import { extractPostImages } from "../../services/fileService";
-import { getId } from "../../utils/api";
+import { getAuthor, getId } from "../../utils/api";
 
 function timeAgo(dateStr) {
   if (!dateStr) return "";
@@ -28,7 +28,7 @@ export default function PostCard({ post }) {
   const [showComments, setShowComments] = useState(false);
   const queryClient = useQueryClient();
 
-  const author = post?.createdBy || {};
+  const author = getAuthor(post) || {};
   const isOwner = getId(author) === getId(userData);
 
   const userReaction = Array.isArray(post?.reactions)

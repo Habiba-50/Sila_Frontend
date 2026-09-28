@@ -21,3 +21,7 @@ export function extractItem(payload) {
 export function getId(obj) {
   return obj?._id ?? obj?.id ?? null;
 }
+
+export function getAuthor(post) {
+  return post?.user ?? post?.createdBy ?? post?.author ?? post?.owner ?? null;
+}

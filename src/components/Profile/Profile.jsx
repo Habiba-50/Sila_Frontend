@@ -13,9 +13,21 @@ import PostCard from "../PostCard/PostCard";
 import Loader from "../Loader/Loader";
 import EditProfileForm from "./EditProfileForm";
 import { initials, ensureArray } from "../../utils/constants";
-import { extractList } from "../../utils/api";
+import { extractList, getAuthor, getId } from "../../utils/api";
 import { fileUrl } from "../../services/fileService";
-import { getId } from "../../utils/api";
+
+// Turns whatever GET /follow/status/:id returns into true/false.
+function parseIsFollowing(res) {
+  const payload = res?.data ?? res;
+  const positive = ["following", "followed", "accepted", "true"];
+  if (typeof payload === "boolean") return payload;
+  if (typeof payload === "string") return positive.includes(payload.toLowerCase());
+  for (const key of ["isFollowing", "following", "isFollowed", "isFollow"]) {
+    if (typeof payload?.[key] === "boolean") return payload[key];
+  }
+  const s = String(payload?.status ?? payload?.followStatus ?? "").toLowerCase();
+  return positive.includes(s);
+}
 
 export default function Profile() {
   const { id } = useParams();
@@ -43,31 +55,26 @@ export default function Profile() {
 
   const profile = isSelf ? me : otherProfile;
 
+  // ---------- follow ----------
   const { data: followStatusData } = useQuery({
     queryKey: ["follow-status", id],
     queryFn: () => followService.getFollowStatus(id).then((r) => r.data),
     enabled: !isSelf && !!id,
   });
 
-  const isFollowingFromQuery = Boolean(
-    followStatusData?.data?.isFollowing ??
-    followStatusData?.isFollowing ??
-    followStatusData?.data?.following ??
-    followStatusData?.following ??
-    followStatusData?.data?.isFollow ??
-    followStatusData?.isFollow ??
-    followStatusData?.data === true
-  );
-
+  const isFollowingFromQuery = parseIsFollowing(followStatusData);
   const isFollowing = localFollowing !== null ? localFollowing : isFollowingFromQuery;
 
+  // ---------- friends ----------
   const { data: myFriendsData } = useQuery({
     queryKey: ["my-friends"],
     queryFn: () => friendRequestService.getMyFriends({ page: 1, size: 100 }).then((r) => r.data),
     enabled: !isSelf && !!id,
   });
   const myFriendsList = ensureArray(myFriendsData, ["friends", "docs"]);
-  const isFriendFromList = myFriendsList.some((f) => (f?._id || f?.id || f?.user?._id || f?.friend?._id || f) === id);
+  const isFriendFromList = myFriendsList.some(
+    (f) => (f?._id || f?.id || f?.user?._id || f?.friend?._id || f) === id
+  );
 
   const { data: friendStatusData } = useQuery({
     queryKey: ["friend-status", id],
@@ -75,12 +82,18 @@ export default function Profile() {
     enabled: !isSelf && !!id,
   });
 
-  const rawStatus = friendStatusData?.data?.status ?? friendStatusData?.status ?? (typeof friendStatusData?.data === "string" ? friendStatusData?.data : null);
+  const statusPayload = friendStatusData?.data;
+  const rawStatus =
+    statusPayload?.status ??
+    friendStatusData?.status ??
+    (typeof statusPayload === "string" ? statusPayload : null);
+
   const isFriendFromProfile = Boolean(
     profile?.isFriend ||
-    profile?.isFriends ||
-    (Array.isArray(me?.friends) && me.friends.some((f) => (f?._id || f?.id || f) === id)) ||
-    (Array.isArray(profile?.friends) && profile.friends.some((f) => (f?._id || f?.id || f) === me?._id))
+      profile?.isFriends ||
+      (Array.isArray(me?.friends) && me.friends.some((f) => (f?._id || f?.id || f) === id)) ||
+      (Array.isArray(profile?.friends) &&
+        profile.friends.some((f) => (f?._id || f?.id || f) === getId(me)))
   );
 
   let detectedFriendStatus = "none";
@@ -90,7 +103,7 @@ export default function Profile() {
     rawStatus === "accepted" ||
     isFriendFromList ||
     isFriendFromProfile ||
-    friendStatusData?.data?.isFriend ||
+    statusPayload?.isFriend ||
     friendStatusData?.isFriend
   ) {
     detectedFriendStatus = "friends";
@@ -101,11 +114,19 @@ export default function Profile() {
   }
 
   const friendStatus = localFriendStatus !== null ? localFriendStatus : detectedFriendStatus;
-  const requestId = getId(friendStatusData?.data) ?? friendStatusData?.data?.requestId ?? friendStatusData?.requestId ?? id;
+  const requestId =
+    statusPayload?.requestId ??
+    friendStatusData?.requestId ??
+    (typeof statusPayload === "object" ? getId(statusPayload) : null) ??
+    id;
 
+  // ---------- posts ----------
   const { data: postsData, isLoading: loadingPosts } = usePosts();
   const allPosts = extractList(postsData);
-  const userPosts = allPosts.filter((p) => getId(p?.user) === (isSelf ? getId(me) : getId(profile)));
+  const userPosts = allPosts.filter(
+    (p) => getId(getAuthor(p)) === (isSelf ? getId(me) : getId(profile))
+  );
+
   const { data: followersData } = useFollowers({ page: 1, size: 50 }, isSelf && tab === "followers");
   const { data: followingData } = useFollowing({ page: 1, size: 50 }, isSelf && tab === "following");
 
@@ -116,19 +137,31 @@ export default function Profile() {
     queryClient.invalidateQueries({ queryKey: ["user", id] });
   }
 
+  // The button passes the wanted action (true = follow, false = unfollow) so the
+  // request never depends on a stale render. If the server says we're already in
+  // that state, we just sync the button to what the server says.
   const followMutation = useMutation({
-    mutationFn: () => (isFollowing ? followService.unfollowUser(id) : followService.followUser(id)),
-    onMutate: () => {
-      const willFollow = !isFollowing;
-      setLocalFollowing(willFollow);
-      return { previousState: isFollowing };
+    mutationFn: (shouldFollow) =>
+      shouldFollow ? followService.followUser(id) : followService.unfollowUser(id),
+    onMutate: (shouldFollow) => {
+      const previous = isFollowing;
+      setLocalFollowing(shouldFollow);
+      return { previous };
     },
-    onError: (err, vars, context) => {
-      if (context) setLocalFollowing(context.previousState);
-      toast.error(err?.response?.data?.message || "Failed to update follow status");
+    onSuccess: (_res, shouldFollow) => {
+      toast.success(shouldFollow ? "Now following" : "Unfollowed");
+      invalidateStatuses();
     },
-    onSuccess: () => {
-      toast.success(isFollowing ? "Now following" : "Unfollowed");
+    onError: (err, _shouldFollow, context) => {
+      const msg = err?.response?.data?.message || "";
+      if (/already unfollow/i.test(msg)) {
+        setLocalFollowing(false);
+      } else if (/already follow/i.test(msg)) {
+        setLocalFollowing(true);
+      } else {
+        setLocalFollowing(context?.previous ?? null);
+        toast.error(msg || "Failed to update follow status");
+      }
       invalidateStatuses();
     },
   });
@@ -212,13 +245,13 @@ export default function Profile() {
           )}
         </div>
       </div>
- 
+
       <div className="mt-3 px-1 flex items-start justify-between gap-3">
         <div>
           <h1 className="font-display text-xl font-semibold">{profile.username}</h1>
           {profile.bio && <p className="text-sm text-ink-soft mt-1">{profile.bio}</p>}
         </div>
- 
+
         {isSelf ? (
           <button
             onClick={() => setEditing((e) => !e)}
@@ -229,14 +262,15 @@ export default function Profile() {
         ) : (
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
-              onClick={() => followMutation.mutate()}
-              className={`text-sm font-semibold px-4 py-2 rounded-lg ${
+              onClick={() => followMutation.mutate(!isFollowing)}
+              disabled={followMutation.isPending}
+              className={`text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-60 ${
                 isFollowing ? "border border-border text-ink-soft" : "bg-primary text-white"
               }`}
             >
               {isFollowing ? "Following" : "Follow"}
             </button>
- 
+
             {friendStatus === "none" && (
               <button onClick={() => addFriendMutation.mutate()} className="border border-border text-sm font-semibold px-4 py-2 rounded-lg">
                 Add friend
@@ -270,7 +304,7 @@ export default function Profile() {
                 </button>
               </>
             )}
- 
+
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((o) => !o)}
@@ -292,13 +326,13 @@ export default function Profile() {
           </div>
         )}
       </div>
- 
+
       {editing && (
         <div className="mt-5">
           <EditProfileForm onDone={() => setEditing(false)} />
         </div>
       )}
- 
+
       {isSelf && (
         <div className="flex gap-1 border-b border-border mt-6 mb-1">
           {["posts", "followers", "following"].map((t) => (
@@ -314,7 +348,7 @@ export default function Profile() {
           ))}
         </div>
       )}
- 
+
       <div className="mt-4">
         {(!isSelf || tab === "posts") && (
           <>
@@ -327,7 +361,7 @@ export default function Profile() {
             ))}
           </>
         )}
- 
+
         {isSelf && tab === "followers" && (
           <div className="divide-y divide-border">
             {followers.map((f) => (
@@ -341,7 +375,7 @@ export default function Profile() {
             {followers.length === 0 && <p className="text-sm text-ink-faint py-6">No followers yet.</p>}
           </div>
         )}
- 
+
         {isSelf && tab === "following" && (
           <div className="divide-y divide-border">
             {following.map((f) => (

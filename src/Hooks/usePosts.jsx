@@ -4,6 +4,9 @@ import { getPosts } from "../services/postService";
 export default function usePosts(params) {
   return useQuery({
     queryKey: ["posts", params],
-    queryFn: () => getPosts(params).then((res) => res.data.docs),
+    queryFn: async () => {
+      const res = await getPosts(params);
+      return res.data.data.docs;
+    },
   });
 }

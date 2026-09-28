@@ -67,7 +67,8 @@ function FindPeopleWidget() {
 }
 
 export default function Home() {
-  const { data, isLoading, isError } = usePosts();
+  const { data, isLoading, isError, error } = usePosts();
+console.log("feed data:", data, "error:", error);
   const posts = extractList(data);
 
   return (
@@ -78,8 +79,7 @@ export default function Home() {
 
         {isLoading && <Loader />}
         {isError && (
-          <p className="text-sm text-like py-6">Couldn't load the feed right now.</p>
-        )}
+<p className="text-sm text-like py-6">Couldn't load the feed right now. ({error?.message})</p>        )}
         {!isLoading && !isError && posts.length === 0 && (
           <p className="text-sm text-ink-faint py-8 text-center">
             No posts yet — follow people or write the first one.
