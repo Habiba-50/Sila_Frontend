@@ -54,8 +54,16 @@ export default function ChatDirect() {
 
     function handleNewMessage(msg) {
       if (msg.sendTo === userId || getId(msg.from) === userId || msg.from === userId) {
-        setMessages((prev) => [...prev, msg]);
+        setMessages((prev) => [...prev, { ...msg, _id: msg.messageId ?? msg._id }]);
       }
+    }
+    function handleSentMessage(msg) {
+      if (msg.sendTo !== userId || !msg.messageId) return;
+      setMessages((prev) => {
+        const index = prev.findIndex((m) => m.pending && m.content === msg.content);
+        if (index < 0) return prev;
+        return prev.map((m, i) => i === index ? { ...m, _id: msg.messageId, pending: false } : m);
+      });
     }
     function handleEdited({ messageId, content }) {
       setMessages((prev) => prev.map((m) => (getId(m) === messageId ? { ...m, content, edited: true } : m)));
@@ -68,11 +76,13 @@ export default function ChatDirect() {
     }
 
     socket.on("newMessage", handleNewMessage);
+    socket.on("successMessage", handleSentMessage);
     socket.on("message_edited", handleEdited);
     socket.on("message_deleted", handleDeleted);
     socket.on("custom_error", handleError);
     return () => {
       socket.off("newMessage", handleNewMessage);
+      socket.off("successMessage", handleSentMessage);
       socket.off("message_edited", handleEdited);
       socket.off("message_deleted", handleDeleted);
       socket.off("custom_error", handleError);
@@ -85,7 +95,16 @@ export default function ChatDirect() {
     socket?.emit("sendMessage", { sendTo: userId, content });
     setMessages((prev) => [
       ...prev,
-      { _id: `local-${Date.now()}`, content, from: { _id: getId(me), username: me?.username }, createdAt: new Date().toISOString() },
+      {
+      _id: `local-${Date.now()}`,
+      content,
+      from: {
+        _id: getId(me),
+        username: me?.username,
+      },
+      createdAt: new Date().toISOString(),
+      pending: true,
+    },
     ]);
     setReplyingTo(null);
   }
@@ -93,13 +112,15 @@ export default function ChatDirect() {
   function submitEdit(text) {
     const socket = getSocket();
     // ASSUMPTION: emit name not documented — verify against your backend.
-    socket.emit("editMessage", { chatId: history?.data?._id, messageId: getId(editingMessage), content: text })
+    if (!getId(editingMessage) || String(getId(editingMessage)).startsWith("local-")) return;
+    socket.emit("editMessage", { chatId: history?.data?._id, messageId: getId(editingMessage), content: text });
     setMessages((prev) => prev.map((m) => (getId(m) === getId(editingMessage) ? { ...m, content: text, edited: true } : m)));
     setEditingMessage(null);
   }
 
   function deleteMessage(message) {
     const socket = getSocket();
+    if (!getId(message) || String(getId(message)).startsWith("local-")) return;
     // ASSUMPTION: emit name not documented — verify against your backend.
     socket?.emit("deleteMessage", { chatId: history?.data?._id, messageId: getId(message) });
     setMessages((prev) => prev.filter((m) => getId(m) !== getId(message)));

@@ -45,7 +45,19 @@ export default function ChatGroup() {
     socket.emit("join_room", { roomId: id });
 
     function handleNewMessage(msg) {
-      if (msg.groupId === id) setMessages((prev) => [...prev, msg]);
+      if (msg.groupId === id) setMessages((prev) => [...prev, { ...msg, _id: msg.messageId ?? msg._id }]);
+    }
+    function handleSentMessage(msg) {
+      if (msg.chatId === id && msg.messageId && !msg.content) {
+        setMessages((prev) => prev.filter((m) => getId(m) !== msg.messageId));
+        return;
+      }
+      if (msg.groupId !== id || !msg.messageId) return;
+      setMessages((prev) => {
+        const index = prev.findIndex((m) => String(m._id).startsWith("local-") && m.content === msg.content);
+        if (index < 0) return prev;
+        return prev.map((m, i) => i === index ? { ...m, _id: msg.messageId, pending: false } : m);
+      });
     }
     function handleEdited({ messageId, content }) {
       setMessages((prev) => prev.map((m) => (m._id === messageId ? { ...m, content, edited: true } : m)));
@@ -58,11 +70,13 @@ export default function ChatGroup() {
     }
 
     socket.on("newMessage", handleNewMessage);
+    socket.on("successMessage", handleSentMessage);
     socket.on("message_edited", handleEdited);
     socket.on("message_deleted", handleDeleted);
     socket.on("custom_error", handleError);
     return () => {
       socket.off("newMessage", handleNewMessage);
+      socket.off("successMessage", handleSentMessage);
       socket.off("message_edited", handleEdited);
       socket.off("message_deleted", handleDeleted);
       socket.off("custom_error", handleError);
@@ -80,20 +94,23 @@ export default function ChatGroup() {
     socket?.emit("sendGroupMessage", { groupId: id, content });
     setMessages((prev) => [
       ...prev,
-      { _id: `local-${Date.now()}`, content, from: { _id: userData?._id, username: userData?.username }, createdAt: new Date().toISOString() },
+      { _id: `local-${Date.now()}`, content, from: { _id: userData?._id, username: userData?.username }, createdAt: new Date().toISOString(), pending: true },
     ]);
     setReplyingTo(null);
   }
 
   function submitEdit(text) {
     const socket = getSocket();
-   socket?.emit("editMessage", { chatId: id, messageId: editingMessage._id, content: text });    setMessages((prev) => prev.map((m) => (m._id === editingMessage._id ? { ...m, content: text, edited: true } : m)));
+    if (!getId(editingMessage) || String(getId(editingMessage)).startsWith("local-")) return;
+    socket?.emit("editMessage", { chatId: id, messageId: getId(editingMessage), content: text });
+    setMessages((prev) => prev.map((m) => (getId(m) === getId(editingMessage) ? { ...m, content: text, edited: true } : m)));
     setEditingMessage(null);
   }
 
   function deleteMessage(message) {
     const socket = getSocket();
-    socket?.emit("deleteMessage", { chatId: id, messageId: message._id });    setMessages((prev) => prev.filter((m) => m._id !== message._id));
+    if (!getId(message) || String(getId(message)).startsWith("local-")) return;
+    socket?.emit("deleteMessage", { chatId: id, messageId: getId(message) });
   }
 
   function reactToMessage(message, react) {
