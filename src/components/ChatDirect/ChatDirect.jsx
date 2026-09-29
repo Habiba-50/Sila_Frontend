@@ -101,7 +101,7 @@ export default function ChatDirect() {
   function deleteMessage(message) {
     const socket = getSocket();
     // ASSUMPTION: emit name not documented — verify against your backend.
-    socket?.emit("deleteMessage", { messageId: getId(message) });
+    socket?.emit("deleteMessage", { chatId: history?.data?._id, messageId: getId(message) });
     setMessages((prev) => prev.filter((m) => getId(m) !== getId(message)));
   }
 

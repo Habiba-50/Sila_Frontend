@@ -42,8 +42,9 @@ export default function MessageBubble({ message, onReply, onEdit, onDelete, onRe
           {menuOpen && (
             <div
               onMouseLeave={() => setMenuOpen(false)}
-              className="absolute z-10 top-6 right-0 bg-panel border border-border rounded-xl shadow-lg py-1 min-w-[120px]"
-            >
+              className={`absolute z-10 top-6 bg-panel border border-border rounded-xl shadow-lg py-1 min-w-[120px] ${
+              isMine ? "right-0" : "left-0"
+              }`}            >
               <button
                 onClick={() => { onReact?.(message, "❤️"); setMenuOpen(false); }}
                 className="w-full text-left text-sm px-3.5 py-2 hover:bg-black/[0.03]"

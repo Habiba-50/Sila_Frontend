@@ -5,6 +5,7 @@ import { UserContext } from "../../context/UserContext";
 import CommentItem from "./CommentItem";
 import { initials } from "../../utils/constants";
 import { getId } from "../../utils/api";
+import Avatar from "../Avatar/Avatar";
 
 // NOTE: the Postman collection doesn't expose a "list comments for a post"
 // endpoint — this assumes the post document already comes back populated
@@ -28,9 +29,7 @@ export default function Comments({ postId, comments = [] }) {
   return (
     <div className="mt-2 pt-3 border-t border-border">
       <div className="flex gap-2.5 mb-1">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-[11px] font-semibold flex-shrink-0">
-          {initials(userData?.username)}
-        </div>
+        <Avatar user={userData} size={32} textSize="text-[11px]" />
         <div className="flex-1 flex gap-2">
           <input
             value={text}

@@ -101,15 +101,25 @@ export default function Profile() {
     rawStatus === "friends" ||
     rawStatus === "friend" ||
     rawStatus === "accepted" ||
+    rawStatus === "Friends" ||
     isFriendFromList ||
     isFriendFromProfile ||
     statusPayload?.isFriend ||
     friendStatusData?.isFriend
   ) {
     detectedFriendStatus = "friends";
-  } else if (rawStatus === "pending_sent" || rawStatus === "sent" || rawStatus === "pending") {
+  } else if (
+    rawStatus === "pending_sent" ||
+    rawStatus === "sent" ||
+    rawStatus === "pending" ||
+    rawStatus === "Requested"
+  ) {
     detectedFriendStatus = "pending_sent";
-  } else if (rawStatus === "pending_received" || rawStatus === "received") {
+  } else if (
+    rawStatus === "pending_received" ||
+    rawStatus === "received" ||
+    rawStatus === "Accept Request"
+  ) {
     detectedFriendStatus = "pending_received";
   }
 

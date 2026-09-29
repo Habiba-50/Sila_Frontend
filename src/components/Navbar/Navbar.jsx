@@ -2,7 +2,8 @@ import { useContext } from "react";
 import { NavLink } from "react-router-dom";
 import { UserContext } from "../../context/UserContext";
 import useUnreadCount from "../../Hooks/useUnreadCount";
-import { initials } from "../../utils/constants";
+import Avatar from "../Avatar/Avatar";
+
 
 const links = [
   { to: "/", label: "Home", icon: "M3 11.5 12 4l9 7.5M5 10v9h5v-6h4v6h5v-9" },
@@ -79,9 +80,9 @@ export default function Navbar() {
           >
             <NavIcon label={l.label} />
             <span className="hidden lg:inline">{l.label}</span>
-            {l.label === "Notifications" && unread?.count > 0 && (
+            {l.label === "Notifications" && unread > 0 && (
               <span className="absolute top-1 left-6 lg:static lg:ml-auto bg-like text-white text-[10px] font-bold rounded-full min-w-[17px] h-[17px] px-1 flex items-center justify-center">
-                {unread?.count > 99 ? "99+" : unread?.count}
+                {unread > 99 ? "99+" : unread}
               </span>
             )}
           </NavLink>
@@ -93,9 +94,7 @@ export default function Navbar() {
           to="/profile"
           className="hidden lg:flex items-center gap-2.5 mt-5 pt-4 border-t border-border px-3"
         >
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
-            {initials(userData.username)}
-          </div>
+          <Avatar user={userData} size={36} textSize="text-xs" />
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate">{userData.username}</p>
             <p className="text-xs text-ink-faint">View profile</p>

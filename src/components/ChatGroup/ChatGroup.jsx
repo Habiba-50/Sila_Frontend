@@ -87,15 +87,13 @@ export default function ChatGroup() {
 
   function submitEdit(text) {
     const socket = getSocket();
-    socket?.emit("editMessage", { messageId: editingMessage._id, content: text }); // ASSUMPTION, see MessageBubble note
-    setMessages((prev) => prev.map((m) => (m._id === editingMessage._id ? { ...m, content: text, edited: true } : m)));
+   socket?.emit("editMessage", { chatId: id, messageId: editingMessage._id, content: text });    setMessages((prev) => prev.map((m) => (m._id === editingMessage._id ? { ...m, content: text, edited: true } : m)));
     setEditingMessage(null);
   }
 
   function deleteMessage(message) {
     const socket = getSocket();
-    socket?.emit("deleteMessage", { messageId: message._id }); // ASSUMPTION
-    setMessages((prev) => prev.filter((m) => m._id !== message._id));
+    socket?.emit("deleteMessage", { chatId: id, messageId: message._id });    setMessages((prev) => prev.filter((m) => m._id !== message._id));
   }
 
   function reactToMessage(message, react) {

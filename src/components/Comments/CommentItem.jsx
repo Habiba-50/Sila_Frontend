@@ -3,8 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as commentService from "../../services/commentService";
 import { UserContext } from "../../context/UserContext";
 import ReactionButton from "../ReactionButton/ReactionButton";
-import { initials } from "../../utils/constants";
 import { getId } from "../../utils/api";
+import Avatar from "../Avatar/Avatar";
 
 export default function CommentItem({ postId, comment }) {
   const { userData } = useContext(UserContext);
@@ -44,9 +44,7 @@ export default function CommentItem({ postId, comment }) {
   return (
     <div className="py-3">
       <div className="flex gap-2.5">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-[11px] font-semibold flex-shrink-0">
-          {initials(comment?.user?.username)}
-        </div>
+        <Avatar user={comment?.user} size={32} textSize="text-[11px]" />
         <div className="flex-1 min-w-0">
           <div className="bg-black/[0.03] rounded-xl px-3.5 py-2 inline-block max-w-full">
             <p className="text-sm font-semibold">{comment?.user?.username || "Member"}</p>
@@ -79,9 +77,7 @@ export default function CommentItem({ postId, comment }) {
 
                 return (
                   <div key={getId(reply)} className="flex gap-2">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-[9px] font-semibold flex-shrink-0">
-                      {initials(reply?.user?.username)}
-                    </div>
+                    <Avatar user={reply?.user} size={24} textSize="text-[9px]" />
                     <div>
                       <div className="bg-black/[0.03] rounded-xl px-3 py-1.5 inline-block">
                         <p className="text-xs font-semibold">{reply?.user?.username || "Member"}</p>

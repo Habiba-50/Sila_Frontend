@@ -8,9 +8,9 @@ import * as bookmarkService from "../../services/bookmarkService";
 import { UserContext } from "../../context/UserContext";
 import ReactionButton from "../ReactionButton/ReactionButton";
 import Comments from "../Comments/Comments";
-import { initials} from "../../utils/constants";
 import { extractPostImages } from "../../services/fileService";
 import { getAuthor, getId } from "../../utils/api";
+import Avatar from "../Avatar/Avatar";
 
 function timeAgo(dateStr) {
   if (!dateStr) return "";
@@ -86,9 +86,7 @@ export default function PostCard({ post }) {
 
       <div className="flex gap-3">
         <Link to={`/profile/${getId(author)}`} className="flex-shrink-0">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-sm font-semibold">
-            {initials(author?.username)}
-          </div>
+          <Avatar user={author} size={44} />
         </Link>
 
         <div className="flex-1 min-w-0">

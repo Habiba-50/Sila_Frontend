@@ -35,7 +35,10 @@ export default function Notifications() {
 
   const remove = useMutation({
     mutationFn: (id) => notificationService.deleteNotification(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["unread-count"] });
+    },  
   });
 
   const hasMarkedRef = useRef(false);

@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { createPost } from "../../services/postService";
 import { UserContext } from "../../context/UserContext";
-import { initials } from "../../utils/constants";
+import Avatar from "../Avatar/Avatar";
 
 export default function CreatePost() {
   const { userData } = useContext(UserContext);
@@ -31,9 +31,7 @@ export default function CreatePost() {
   return (
     <div className="bg-panel border border-border rounded-2xl p-4 sm:p-4.5 mb-5">
       <div className="flex gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
-          {initials(userData?.username)}
-        </div>
+        <Avatar user={userData} size={40} />
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}

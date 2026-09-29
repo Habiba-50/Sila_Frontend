@@ -2,7 +2,7 @@ import apiClient from "./apiClient";
 
 // GET /notification?page=&limit=
 export function getNotifications(params) {
-  return apiClient.get("/notification/unread", { params });
+  return apiClient.get("/notification", { params });
 }
 
 // GET /notification/:id
