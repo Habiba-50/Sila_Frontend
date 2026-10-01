@@ -1,9 +1,8 @@
 import axios from "axios";
 
-// Base URL comes from the Postman collection.
-// Override it with VITE_API_BASE_URL in your .env when you deploy the backend.
+// Override with VITE_API_BASE_URL for local development or another deployment.
 export const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+  (import.meta.env.VITE_API_BASE_URL || "https://socialbe.bonto.run").replace(/\/+$/, "");
 
 const apiClient = axios.create({
   baseURL: BASE_URL,

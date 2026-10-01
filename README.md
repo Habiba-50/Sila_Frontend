@@ -16,7 +16,7 @@ npm run dev
 `.env` already has the API base URL and your Firebase config from the demo you sent:
 
 ```
-VITE_API_BASE_URL=https://sela.bonto.run/
+VITE_API_BASE_URL=https://socialbe.bonto.run/
 VITE_FIREBASE_...
 ```
 
