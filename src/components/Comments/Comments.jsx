@@ -11,8 +11,10 @@ import Avatar from "../Avatar/Avatar";
 // endpoint — this assumes the post document already comes back populated
 // with a `comments` array (common with a populate()-style API). If your
 // backend paginates comments separately, swap this for a real query.
-export default function Comments({ postId, comments = [] }) {
-  const commentList = Array.isArray(comments) ? comments : [];
+export default function Comments({ postId, comments = [], isPostOwner = false }) {
+  const commentList = Array.isArray(comments)
+    ? comments.filter((comment) => !comment?.deletedAt && !comment?.commentId)
+    : [];
   const { userData } = useContext(UserContext);
   const [text, setText] = useState("");
   const queryClient = useQueryClient();
@@ -53,7 +55,12 @@ export default function Comments({ postId, comments = [] }) {
           <p className="text-sm text-ink-faint py-3">Be the first to comment.</p>
         )}
         {commentList.map((c) => (
-          <CommentItem key={getId(c)} postId={postId} comment={c} />
+          <CommentItem
+            key={getId(c)}
+            postId={postId}
+            comment={c}
+            isPostOwner={isPostOwner}
+          />
         ))}
       </div>
     </div>

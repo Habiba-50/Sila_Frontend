@@ -4,7 +4,10 @@ import { BASE_URL } from "./apiClient";
 let socket = null;
 
 export function connectSocket(token) {
-  if (socket?.connected) return socket;
+  if (socket) {
+    if (!socket.connected && !socket.active) socket.connect();
+    return socket;
+  }
   socket = io(BASE_URL, {
     auth: { authorization: token },
     autoConnect: true,

@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/UserContext";
@@ -7,6 +7,7 @@ import * as userService from "../../services/userService";
 import * as followService from "../../services/followService";
 import * as friendRequestService from "../../services/friendRequestService";
 import * as blockService from "../../services/blockService";
+import * as repostService from "../../services/repostService";
 import usePosts from "../../Hooks/usePosts";
 import { useFollowers, useFollowing } from "../../Hooks/useFollowers";
 import PostCard from "../PostCard/PostCard";
@@ -32,6 +33,7 @@ function parseIsFollowing(res) {
 export default function Profile() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { userData: me } = useContext(UserContext);
   const [editing, setEditing] = useState(false);
   const [tab, setTab] = useState("posts");
@@ -49,11 +51,20 @@ export default function Profile() {
 
   const { data: otherProfile, isLoading: loadingOther } = useQuery({
     queryKey: ["user", id],
-    queryFn: () => userService.getUserById(id).then((r) => r.data?.data ?? r.data),
+    queryFn: async () => {
+      const response = await userService.getUserById(id);
+      const payload = response?.data?.data ?? response?.data;
+      // GET /user/:id responds with { data: { user: ... } }.
+      return payload?.user ?? payload?.data?.user ?? payload;
+    },
     enabled: !isSelf && !!id,
   });
 
   const profile = isSelf ? me : otherProfile;
+  const profileName =
+    profile?.username ||
+    [profile?.firstName, profile?.lastName].filter(Boolean).join(" ") ||
+    "User";
 
   // ---------- follow ----------
   const { data: followStatusData } = useQuery({
@@ -125,6 +136,7 @@ export default function Profile() {
 
   const friendStatus = localFriendStatus !== null ? localFriendStatus : detectedFriendStatus;
   const requestId =
+    location.state?.friendRequestId ??
     statusPayload?.requestId ??
     friendStatusData?.requestId ??
     (typeof statusPayload === "object" ? getId(statusPayload) : null) ??
@@ -133,9 +145,35 @@ export default function Profile() {
   // ---------- posts ----------
   const { data: postsData, isLoading: loadingPosts } = usePosts();
   const allPosts = extractList(postsData);
-  const userPosts = allPosts.filter(
-    (p) => getId(getAuthor(p)) === (isSelf ? getId(me) : getId(profile))
+  const { data: myRepostsData, isLoading: loadingReposts } = useQuery({
+    queryKey: ["my-reposts"],
+    queryFn: () => repostService.getMyReposts().then((response) => response.data),
+    enabled: isSelf && Boolean(getId(me)),
+  });
+  const profileUserId = getId(isSelf ? me : profile);
+  const authoredPosts = allPosts.filter(
+    (post) => Boolean(profileUserId) && !post?.isRepost && String(getId(getAuthor(post))) === String(profileUserId)
   );
+  const sharedPosts = isSelf
+    ? extractList(myRepostsData).flatMap((repost) => {
+        const originalPost = repost?.originalPostId ?? repost?.post;
+        if (!originalPost || typeof originalPost !== "object" || !getId(originalPost)) return [];
+        return [{
+          ...originalPost,
+          isRepost: true,
+          repostId: getId(repost),
+          repostedBy: repost?.repostedBy ?? me,
+          repostCaption: repost?.content,
+          repostCreatedAt: repost?.createdAt,
+        }];
+      })
+    : [];
+  const userPosts = [...authoredPosts, ...sharedPosts].sort((a, b) => {
+    const dateA = a?.isRepost ? a.repostCreatedAt : a.createdAt;
+    const dateB = b?.isRepost ? b.repostCreatedAt : b.createdAt;
+    return new Date(dateB || 0).getTime() - new Date(dateA || 0).getTime();
+  });
+  const loadingProfilePosts = loadingPosts || (isSelf && loadingReposts);
 
   const { data: followersData } = useFollowers({ page: 1, size: 50 }, isSelf && tab === "followers");
   const { data: followingData } = useFollowing({ page: 1, size: 50 }, isSelf && tab === "following");
@@ -145,6 +183,8 @@ export default function Profile() {
     queryClient.invalidateQueries({ queryKey: ["friend-status", id] });
     queryClient.invalidateQueries({ queryKey: ["my-friends"] });
     queryClient.invalidateQueries({ queryKey: ["user", id] });
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    queryClient.invalidateQueries({ queryKey: ["unread-count"] });
   }
 
   // The button passes the wanted action (true = follow, false = unfollow) so the
@@ -220,7 +260,7 @@ export default function Profile() {
 
   const blockMutation = useMutation({
     mutationFn: () => blockService.blockUser(id),
-    onSuccess: () => { toast.success(`Blocked ${profile?.username}`); navigate("/"); },
+    onSuccess: () => { toast.success(`Blocked ${profileName}`); navigate("/"); },
   });
 
   if ((!isSelf && loadingOther) || (isSelf && !profile)) return <Loader />;
@@ -230,6 +270,36 @@ export default function Profile() {
 
   const followers = extractList(followersData);
   const following = extractList(followingData);
+
+  function renderFollowedUsers(users) {
+    return users.map((follow) => {
+      const person = follow?.followerId ?? follow?.followingId ?? follow?.user ?? follow;
+      const personId = getId(person);
+      const personName =
+        person?.username ||
+        [person?.firstName, person?.lastName].filter(Boolean).join(" ") ||
+        "User";
+
+      return (
+        <button
+          key={personId ?? getId(follow)}
+          type="button"
+          onClick={() => personId && navigate(`/profile/${personId}`)}
+          disabled={!personId}
+          className="flex w-full items-center gap-3 py-3 text-left hover:bg-black/[0.03] disabled:cursor-default"
+        >
+          <div className="w-10 h-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-sm font-semibold">
+            {person?.profilePicture ? (
+              <img src={fileUrl(person.profilePicture)} alt="" className="w-full h-full object-cover" />
+            ) : (
+              initials(personName)
+            )}
+          </div>
+          <span className="font-semibold text-sm">{personName}</span>
+        </button>
+      );
+    });
+  }
 
   return (
     <div>
@@ -251,14 +321,14 @@ export default function Profile() {
               className="w-full h-full object-cover"
             />
           ) : (
-            initials(profile.username)
+            initials(profileName)
           )}
         </div>
       </div>
 
       <div className="mt-3 px-1 flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-xl font-semibold">{profile.username}</h1>
+          <h1 className="font-display text-xl font-semibold">{profileName}</h1>
           {profile.bio && <p className="text-sm text-ink-soft mt-1">{profile.bio}</p>}
         </div>
 
@@ -362,9 +432,9 @@ export default function Profile() {
       <div className="mt-4">
         {(!isSelf || tab === "posts") && (
           <>
-            {loadingPosts && <Loader />}
-            {!loadingPosts && userPosts.length === 0 && (
-              <p className="text-sm text-ink-faint text-center py-10">No posts yet.</p>
+            {loadingProfilePosts && <Loader />}
+            {!loadingProfilePosts && userPosts.length === 0 && (
+              <p className="text-sm text-ink-faint text-center py-10">No posts or shares yet.</p>
             )}
             {userPosts.map((post) => (
               <PostCard key={getId(post)} post={post} />
@@ -374,28 +444,14 @@ export default function Profile() {
 
         {isSelf && tab === "followers" && (
           <div className="divide-y divide-border">
-            {followers.map((f) => (
-              <div key={getId(f)} className="flex items-center gap-3 py-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-sm font-semibold">
-                  {initials(f.username)}
-                </div>
-                <p className="font-semibold text-sm">{f.username}</p>
-              </div>
-            ))}
+            {renderFollowedUsers(followers)}
             {followers.length === 0 && <p className="text-sm text-ink-faint py-6">No followers yet.</p>}
           </div>
         )}
 
         {isSelf && tab === "following" && (
           <div className="divide-y divide-border">
-            {following.map((f) => (
-              <div key={getId(f)} className="flex items-center gap-3 py-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-sm font-semibold">
-                  {initials(f.username)}
-                </div>
-                <p className="font-semibold text-sm">{f.username}</p>
-              </div>
-            ))}
+            {renderFollowedUsers(following)}
             {following.length === 0 && <p className="text-sm text-ink-faint py-6">Not following anyone yet.</p>}
           </div>
         )}

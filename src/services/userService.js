@@ -10,6 +10,13 @@ export function updateProfile(values) {
   return apiClient.patch("/user/update", values);
 }
 
+// PATCH /user/profile-image  (multipart field: image)
+export function uploadProfileImage(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+  return apiClient.patch("/user/profile-image", formData);
+}
+
 // POST /user/logout  { flag }
 export function logout(flag = 0) {
   return apiClient.post("/user/logout", { flag });
@@ -25,9 +32,11 @@ export function confirmProfileImage(key) {
   return apiClient.patch("/user/profile-image/confirm", { key });
 }
 
-// PATCH /user/cover-images  (same pre-signed-URL flow as the profile image)
-export function getCoverImageUploadUrl(values) {
-  return apiClient.patch("/user/cover-images", values);
+// PATCH /user/cover-images  (multipart field: attachments; max 2 files)
+export function uploadCoverImages(files) {
+  const formData = new FormData();
+  files.slice(0, 2).forEach((file) => formData.append("attachments", file));
+  return apiClient.patch("/user/cover-images", formData);
 }
 
 // DELETE /user/

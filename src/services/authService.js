@@ -2,7 +2,10 @@ import apiClient from "./apiClient";
 
 // POST /auth/signup  { username, email, password, confirmPassword, gender, phone }
 export function signup(values) {
-  return apiClient.post("/auth/signup", values);
+  return apiClient.post("/auth/signup", {
+    ...values,
+    gender: Number(values.gender),
+  });
 }
 
 // PATCH /auth/confirm-email  { email, otp }

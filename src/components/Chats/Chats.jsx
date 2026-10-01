@@ -5,7 +5,7 @@ import { UserContext } from "../../context/UserContext";
 import Loader from "../Loader/Loader";
 import NewGroupModal from "./NewGroupModal";
 import { initials} from "../../utils/constants";
-import { extractList} from "../../utils/api";
+import { extractList, getId } from "../../utils/api";
 import { fileUrl } from "../../services/fileService";
 
 function timeAgo(dateStr) {
@@ -20,6 +20,7 @@ function timeAgo(dateStr) {
 
 export default function Chats() {
   const [showNewGroup, setShowNewGroup] = useState(false);
+  const { userData } = useContext(UserContext);
   const { data, isLoading } = useMyChats({ page: 1, size: 20 });
   const chats = extractList(data);
 
@@ -50,6 +51,11 @@ export default function Chats() {
           const title = chat.displayName?.trim() || "Conversation";
           const lastMessage = chat.lastMessage?.content || "No messages yet";
           const avatarUrl = chat.displayImage ? fileUrl(chat.displayImage) : null;
+          const lastMessageTime = timeAgo(chat.lastMessage?.createdAt);
+          const lastMessageSenderId =
+            chat.lastMessage?.createdBy?._id ?? chat.lastMessage?.createdBy;
+          const isLastMessageFromMe =
+            lastMessageSenderId && String(lastMessageSenderId) === String(getId(userData));
 
           return (
             <Link
@@ -68,8 +74,11 @@ export default function Chats() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="font-semibold text-[15px] truncate">{title}</p>
-                  <span className="text-xs text-ink-faint flex-shrink-0">
-                    {timeAgo(chat.lastMessage?.createdAt)}
+                  <span className="flex items-center gap-1.5 text-xs text-ink-faint flex-shrink-0">
+                    {lastMessageTime === "now" && !isLastMessageFromMe && (
+                      <span className="h-2 w-2 rounded-full bg-primary" aria-label="New message" />
+                    )}
+                    {lastMessageTime}
                   </span>
                 </div>
                 <p className="text-sm text-ink-faint truncate">{lastMessage}</p>

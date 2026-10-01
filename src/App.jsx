@@ -6,6 +6,7 @@ import "./App.css";
 
 import UserContextProvider from "./context/UserContext";
 import { listenForegroundMessages } from "./services/pushNotifications";
+import { enableNotificationSound, playNotificationSound } from "./services/notificationSound";
 
 import Layout from "./components/Layout/Layout";
 import AuthLayout from "./components/AuthLayout/AuthLayout";
@@ -24,6 +25,7 @@ import Home from "./components/Home/Home";
 import Profile from "./components/Profile/Profile";
 import SearchUsers from "./components/SearchUsers/SearchUsers";
 import Notifications from "./components/Notifications/Notifications";
+import PostDetails from "./components/PostDetails/PostDetails";
 import Bookmarks from "./components/Bookmarks/Bookmarks";
 import BlockedUsers from "./components/BlockedUsers/BlockedUsers";
 import FriendRequests from "./components/FriendRequests/FriendRequests";
@@ -45,6 +47,7 @@ const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: "search", element: <SearchUsers /> },
       { path: "notifications", element: <Notifications /> },
+      { path: "post/:id", element: <PostDetails /> },
       { path: "bookmarks", element: <Bookmarks /> },
       { path: "blocked", element: <BlockedUsers /> },
       { path: "friend-requests", element: <FriendRequests /> },
@@ -76,8 +79,10 @@ const router = createBrowserRouter([
 
 export default function App() {
   useEffect(() => {
+    enableNotificationSound();
     let unsubscribe = () => {};
     listenForegroundMessages((payload) => {
+      playNotificationSound();
       toast(payload?.notification?.title || payload?.data?.title || "New notification");
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["unread-count"] });

@@ -58,6 +58,19 @@ export default function ChatDirect() {
       }
     }
     function handleSentMessage(msg) {
+      if (msg.chatId && msg.messageId && msg.deletedAt) {
+        setMessages((prev) => prev.filter((m) => String(getId(m)) !== String(msg.messageId)));
+        return;
+      }
+      // The backend uses successMessage as the sender's acknowledgement for edits.
+      if (msg.chatId && msg.messageId && msg.content) {
+        setMessages((prev) => prev.map((m) =>
+          String(getId(m)) === String(msg.messageId)
+            ? { ...m, content: msg.content, edited: Boolean(msg.edited), updatedAt: msg.updatedAt }
+            : m
+        ));
+        return;
+      }
       if (msg.sendTo !== userId || !msg.messageId) return;
       setMessages((prev) => {
         const index = prev.findIndex((m) => m.pending && m.content === msg.content);
@@ -65,11 +78,17 @@ export default function ChatDirect() {
         return prev.map((m, i) => i === index ? { ...m, _id: msg.messageId, pending: false } : m);
       });
     }
-    function handleEdited({ messageId, content }) {
-      setMessages((prev) => prev.map((m) => (getId(m) === messageId ? { ...m, content, edited: true } : m)));
+    function handleEdited({ messageId, content, updatedAt }) {
+      setMessages((prev) => prev.map((m) => (String(getId(m)) === String(messageId) ? { ...m, content, edited: true, updatedAt } : m)));
     }
     function handleDeleted({ messageId }) {
       setMessages((prev) => prev.filter((m) => getId(m) !== messageId));
+    }
+    function handleReacted({ messageId, reactions }) {
+      if (!messageId || !Array.isArray(reactions)) return;
+      setMessages((prev) => prev.map((m) =>
+        String(getId(m)) === String(messageId) ? { ...m, likes: reactions } : m
+      ));
     }
     function handleError(err) {
       toast.error(err?.message || "Something went wrong with that message.");
@@ -79,12 +98,14 @@ export default function ChatDirect() {
     socket.on("successMessage", handleSentMessage);
     socket.on("message_edited", handleEdited);
     socket.on("message_deleted", handleDeleted);
+    socket.on("message_reacted", handleReacted);
     socket.on("custom_error", handleError);
     return () => {
       socket.off("newMessage", handleNewMessage);
       socket.off("successMessage", handleSentMessage);
       socket.off("message_edited", handleEdited);
       socket.off("message_deleted", handleDeleted);
+      socket.off("message_reacted", handleReacted);
       socket.off("custom_error", handleError);
     };
   }, [userId]);
@@ -111,26 +132,67 @@ export default function ChatDirect() {
 
   function submitEdit(text) {
     const socket = getSocket();
-    // ASSUMPTION: emit name not documented — verify against your backend.
-    if (!getId(editingMessage) || String(getId(editingMessage)).startsWith("local-")) return;
-    socket.emit("editMessage", { chatId: history?.data?._id, messageId: getId(editingMessage), content: text });
-    setMessages((prev) => prev.map((m) => (getId(m) === getId(editingMessage) ? { ...m, content: text, edited: true } : m)));
+
+    const messageId = getId(editingMessage);
+    const chatId = history?.data?._id;
+
+    if (!messageId || String(messageId).startsWith("local-")) {
+        toast.error("Message is not ready yet.");
+        return;
+    }
+
+    if (!chatId) {
+        toast.error("Chat ID is missing.");
+        return;
+    }
+
+    if (!socket?.connected) {
+        toast.error("Chat is disconnected. Please try again.");
+        return;
+    }
+
+    socket.emit("editMessage", {
+        chatId,
+        messageId,
+        content: text,
+    });
     setEditingMessage(null);
-  }
+}
 
   function deleteMessage(message) {
     const socket = getSocket();
-    if (!getId(message) || String(getId(message)).startsWith("local-")) return;
-    // ASSUMPTION: emit name not documented — verify against your backend.
-    socket?.emit("deleteMessage", { chatId: history?.data?._id, messageId: getId(message) });
-    setMessages((prev) => prev.filter((m) => getId(m) !== getId(message)));
-  }
+
+    const messageId = getId(message);
+    const chatId = history?.data?._id;
+
+    if (!messageId || String(messageId).startsWith("local-")) {
+        toast.error("Message is not ready yet.");
+        return;
+    }
+
+    if (!chatId) {
+        toast.error("Chat ID is missing.");
+        return;
+    }
+
+    if (!socket?.connected) {
+        toast.error("Chat is disconnected. Please try again.");
+        return;
+    }
+
+    socket.emit("deleteMessage", {
+        chatId,
+        messageId,
+    });
+}
 
   function reactToMessage(message, react) {
     const socket = getSocket();
-    // ASSUMPTION: message-level reactions aren't documented at all (only
-    // post reactions are) — this is a best-effort emit, verify/replace.
-    socket?.emit("reactMessage", { messageId: getId(message), react });
+    const messageId = getId(message);
+    const chatId = history?.data?._id;
+    if (!messageId || String(messageId).startsWith("local-") || !chatId) return;
+    if (!socket?.connected) return toast.error("Chat is disconnected. Please try again.");
+    socket.emit("reactMessage", { chatId, messageId, react });
   }
 
   return (

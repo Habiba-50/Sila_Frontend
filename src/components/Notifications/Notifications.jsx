@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as notificationService from "../../services/notificationService";
 import Loader from "../Loader/Loader";
@@ -16,6 +17,7 @@ function timeAgo(dateStr) {
 }
 
 export default function Notifications() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["notifications"],
@@ -41,15 +43,14 @@ export default function Notifications() {
     },  
   });
 
-  const hasMarkedRef = useRef(false);
-  useEffect(() => {
-    if (hasMarkedRef.current) return;
-    hasMarkedRef.current = true;
-    markAllRead.mutate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const notifications = extractList(data);
+
+  useEffect(() => {
+    if (notifications.some((notification) => !notification.isRead) && !markAllRead.isPending) {
+      markAllRead.mutate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications, markAllRead.isPending]);
 
   return (
     <div>
@@ -70,21 +71,40 @@ export default function Notifications() {
       )}
 
       <div className="divide-y divide-border">
-        {notifications.map((n) => (
-          <div
-            key={getId(n)}
-            className={`flex items-start gap-3 py-3.5 ${!n.isRead ? "bg-primary-soft/40 -mx-3 px-3 rounded-lg" : ""}`}
-          >
-            <span className="text-lg flex-shrink-0 leading-none mt-0.5">{describeNotification(n).icon}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm">{describeNotification(n).text}</p>
-              <p className="text-xs text-ink-faint mt-0.5">{timeAgo(n.createdAt)}</p>
+        {notifications.map((n) => {
+          const isIncomingFriendRequest = n.type === "FRIEND_REQUEST" && n.friendRequestStatus === "PENDING";
+          const postId = typeof n.postId === "string" ? n.postId : getId(n.postId);
+          const canOpenProfile = ["FOLLOW", "FRIEND_REQUEST"].includes(n.type) && n.sender?.id;
+          const canOpen = Boolean(postId || canOpenProfile);
+          return (
+            <div
+              key={getId(n)}
+              className={`flex items-start gap-3 py-3.5 ${!n.isRead ? "bg-primary-soft/40 -mx-3 px-3 rounded-lg" : ""}`}
+            >
+              <span className="text-lg flex-shrink-0 leading-none mt-0.5">{describeNotification(n).icon}</span>
+              <button
+                type="button"
+                disabled={!canOpen}
+                onClick={() => {
+                  if (postId) {
+                    navigate(`/post/${postId}`);
+                  } else if (canOpenProfile) {
+                    navigate(`/profile/${n.sender.id}`, {
+                      state: { friendRequestId: isIncomingFriendRequest ? n.requestId : undefined },
+                    });
+                  }
+                }}
+                className={`flex-1 min-w-0 text-left ${canOpen ? "cursor-pointer hover:text-primary" : "cursor-default"}`}
+              >
+                <p className="text-sm">{n.text || describeNotification(n).text}</p>
+                <p className="text-xs text-ink-faint mt-0.5">{timeAgo(n.createdAt)}</p>
+              </button>
+              <button onClick={() => remove.mutate(getId(n))} className="text-xs text-ink-faint hover:text-like flex-shrink-0">
+                Remove
+              </button>
             </div>
-            <button onClick={() => remove.mutate(getId(n))} className="text-xs text-ink-faint hover:text-like flex-shrink-0">
-              Remove
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

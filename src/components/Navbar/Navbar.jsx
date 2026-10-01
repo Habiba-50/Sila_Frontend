@@ -1,8 +1,13 @@
-import { useContext } from "react";
-import { NavLink } from "react-router-dom";
+import { useContext, useEffect, useRef, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { UserContext } from "../../context/UserContext";
 import useUnreadCount from "../../Hooks/useUnreadCount";
 import Avatar from "../Avatar/Avatar";
+import { getId } from "../../utils/api";
+import { connectSocket } from "../../services/socket";
+import { playNotificationSound } from "../../services/notificationSound";
 
 
 const links = [
@@ -63,7 +68,81 @@ function NavIcon({ label }) {
 
 export default function Navbar() {
   const { userData, token } = useContext(UserContext);
-  const { data: unread } = useUnreadCount(!!token);
+  const location = useLocation();
+  const isNotificationsSection = location.pathname === "/notifications";
+  const { data: unread, isFetching: isUnreadCountFetching, refetch: refetchUnreadCount } =
+    useUnreadCount(!!token, getId(userData));
+  const wasInNotifications = useRef(isNotificationsSection);
+  const [unreadByConversation, setUnreadByConversation] = useState({});
+  const seenMessageIds = useRef(new Set());
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setUnreadByConversation({});
+    seenMessageIds.current.clear();
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    const socket = connectSocket(token);
+
+    function handleNewMessage(message) {
+      if (!message?.messageId || seenMessageIds.current.has(message.messageId)) return;
+      seenMessageIds.current.add(message.messageId);
+      playNotificationSound();
+      queryClient.invalidateQueries({ queryKey: ["my-chats"] });
+
+      const sender = message.from;
+      const senderId = getId(sender);
+      const activeDirectChat = location.pathname.match(/^\/chats\/user\/([^/]+)/)?.[1];
+      const groupKey = message.groupId ? `group:${message.groupId}` : null;
+      const directKey = senderId ? `user:${senderId}` : null;
+      const conversationKey = groupKey ?? directKey;
+      const activeGroupChat = location.pathname.match(/^\/chats\/group\/([^/]+)/)?.[1];
+      const isOpenConversation =
+        (activeDirectChat && senderId === activeDirectChat) ||
+        (activeGroupChat && message.groupId === activeGroupChat);
+      if (isOpenConversation) return;
+
+      if (conversationKey) {
+        setUnreadByConversation((unread) => ({
+          ...unread,
+          [conversationKey]: (unread[conversationKey] ?? 0) + 1,
+        }));
+      }
+      const senderName =
+        sender?.username ||
+        [sender?.firstName, sender?.lastName].filter(Boolean).join(" ") ||
+        "Someone";
+      toast(`New message from ${senderName}`, { icon: "💬" });
+    }
+
+    socket.on("newMessage", handleNewMessage);
+    return () => socket.off("newMessage", handleNewMessage);
+  }, [token, location.pathname, queryClient]);
+
+  useEffect(() => {
+    const directChatId = location.pathname.match(/^\/chats\/user\/([^/]+)/)?.[1];
+    const groupChatId = location.pathname.match(/^\/chats\/group\/([^/]+)/)?.[1];
+    const key = directChatId ? `user:${directChatId}` : groupChatId ? `group:${groupChatId}` : null;
+    if (!key) return;
+    setUnreadByConversation((unread) => {
+      if (!(key in unread)) return unread;
+      const next = { ...unread };
+      delete next[key];
+      return next;
+    });
+  }, [location.pathname]);
+
+  const unreadMessages = Object.values(unreadByConversation).reduce((total, count) => total + count, 0);
+
+  useEffect(() => {
+    const leftNotifications = wasInNotifications.current && !isNotificationsSection;
+    wasInNotifications.current = isNotificationsSection;
+    if (leftNotifications && token && getId(userData)) {
+      refetchUnreadCount();
+    }
+  }, [isNotificationsSection, token, userData, refetchUnreadCount]);
 
   return (
     <aside className="lg:sticky lg:top-[88px] h-fit">
@@ -80,9 +159,14 @@ export default function Navbar() {
           >
             <NavIcon label={l.label} />
             <span className="hidden lg:inline">{l.label}</span>
-            {l.label === "Notifications" && unread > 0 && (
+            {l.label === "Notifications" && !isNotificationsSection && !isUnreadCountFetching && unread > 0 && (
               <span className="absolute top-1 left-6 lg:static lg:ml-auto bg-like text-white text-[10px] font-bold rounded-full min-w-[17px] h-[17px] px-1 flex items-center justify-center">
                 {unread > 99 ? "99+" : unread}
+              </span>
+            )}
+            {l.label === "Messages" && unreadMessages > 0 && (
+              <span className="absolute top-1 left-6 lg:static lg:ml-auto bg-like text-white text-[10px] font-bold rounded-full min-w-[17px] h-[17px] px-1 flex items-center justify-center">
+                {unreadMessages > 99 ? "99+" : unreadMessages}
               </span>
             )}
           </NavLink>

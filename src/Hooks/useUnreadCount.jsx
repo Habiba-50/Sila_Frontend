@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { getUnreadCount } from "../services/notificationService";
 
-export default function useUnreadCount(enabled) {
+export default function useUnreadCount(enabled, userId) {
   return useQuery({
-    queryKey: ["unread-count"],
-    queryFn: () => getUnreadNotifications({ page: 1, size: 50 }).then((res) => res.data),
-    enabled,
-    refetchInterval: 30000,
-    select: (data) => extractList(data).filter((n) => n.type !== "NEW_LOGIN").length,
+    queryKey: ["unread-count", userId],
+    queryFn: () => getUnreadCount().then((res) => res.data?.data?.count ?? res.data?.count ?? 0),
+    enabled: enabled && !!userId,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
 }

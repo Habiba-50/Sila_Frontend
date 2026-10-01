@@ -26,7 +26,7 @@ export default function Avatar({ user, size = 40, textSize = "text-sm", classNam
       style={style}
       className={`rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center font-semibold flex-shrink-0 ${textSize} ${className}`}
     >
-      {initials(user?.username)}
+      {initials(user?.username || [user?.firstName, user?.lastName].filter(Boolean).join(" "))}
     </div>
   );
 }

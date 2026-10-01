@@ -1,17 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { searchUsers } from "../../services/userService";
 import { createGroup } from "../../services/chatService";
 import { initials } from "../../utils/constants";
 import { extractList, getId } from "../../utils/api";
+import Avatar from "../Avatar/Avatar";
 
 export default function NewGroupModal({ onClose }) {
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [icon, setIcon] = useState(null);
+  const [iconPreview, setIconPreview] = useState("");
   const [term, setTerm] = useState("");
   const [results, setResults] = useState([]);
   const [picked, setPicked] = useState([]);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!icon) return setIconPreview("");
+    const previewUrl = URL.createObjectURL(icon);
+    setIconPreview(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [icon]);
 
   async function runSearch(value) {
     setTerm(value);
@@ -27,7 +38,14 @@ export default function NewGroupModal({ onClose }) {
   }
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => createGroup({ groupName: name, participantsIds: picked.map((u) => getId(u)) }),
+    mutationFn: () => {
+      const body = new FormData();
+      body.append("groupName", name.trim());
+      body.append("groupDescription", description.trim());
+      body.append("participantsIds", JSON.stringify(picked.map((u) => getId(u))));
+      if (icon) body.append("attachment", icon);
+      return createGroup(body);
+    },
     onSuccess: () => {
       toast.success("Group created");
       queryClient.invalidateQueries({ queryKey: ["my-chats"] });
@@ -44,11 +62,27 @@ export default function NewGroupModal({ onClose }) {
       >
         <h2 className="font-display text-lg font-semibold mb-4">New group</h2>
 
+        <label className="block text-sm font-medium mb-3">Group photo
+          <div className="flex items-center gap-3 mt-1.5">
+            {iconPreview ? <img src={iconPreview} alt="Group icon preview" className="w-12 h-12 rounded-full object-cover" /> : <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center font-semibold">{initials(name || "Group")}</div>}
+            <input type="file" accept="image/jpeg,image/png,image/jpg" onChange={(e) => setIcon(e.target.files?.[0] || null)} className="min-w-0 text-sm" />
+          </div>
+        </label>
+
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Group name"
           className="w-full border border-border rounded-lg px-3.5 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30"
+        />
+
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Group description (optional)"
+          maxLength={500}
+          rows={2}
+          className="w-full border border-border rounded-lg px-3.5 py-2.5 text-sm mb-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
 
         <input
@@ -61,8 +95,9 @@ export default function NewGroupModal({ onClose }) {
         {picked.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {picked.map((u) => (
-              <span key={getId(u)} className="bg-primary-soft text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
-                {u.username} ✕
+              <span key={getId(u)} className="inline-flex items-center gap-1.5 bg-primary-soft text-primary text-xs font-semibold pl-1 pr-2.5 py-1 rounded-full">
+                <Avatar user={u} size={22} textSize="text-[9px]" />
+                {u.username || [u.firstName, u.lastName].filter(Boolean).join(" ")} ✕
               </span>
             ))}
           </div>
@@ -75,10 +110,8 @@ export default function NewGroupModal({ onClose }) {
               onClick={() => togglePick(u)}
               className="w-full flex items-center gap-2.5 py-2 text-left"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-[11px] font-semibold">
-                {initials(u.username)}
-              </div>
-              <span className="text-sm font-medium">{u.username}</span>
+              <Avatar user={u} size={32} textSize="text-[11px]" />
+              <span className="text-sm font-medium">{u.username || [u.firstName, u.lastName].filter(Boolean).join(" ")}</span>
             </button>
           ))}
         </div>

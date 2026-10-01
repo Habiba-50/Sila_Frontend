@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function ChatComposer({ onSend, replyingTo, onCancelReply, editingMessage, onCancelEdit, onSubmitEdit }) {
   const [text, setText] = useState("");
+
+  useEffect(() => {
+    if (editingMessage) {
+      setText(editingMessage.content ?? "");
+    } else {
+      setText("");
+    }
+  }, [editingMessage]);
 
   function handleSubmit() {
     if (!text.trim()) return;

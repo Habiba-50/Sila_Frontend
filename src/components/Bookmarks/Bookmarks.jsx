@@ -12,7 +12,9 @@ export default function Bookmarks() {
   });
 
   const list = ensureArray(data, ["bookmarks", "docs"]);
-  const posts = list.map((b) => b.post || b);
+  const posts = list
+    .map((bookmark) => bookmark.post ?? bookmark.postId ?? bookmark)
+    .filter((post) => post && typeof post === "object" && getId(post));
 
   return (
     <div>
