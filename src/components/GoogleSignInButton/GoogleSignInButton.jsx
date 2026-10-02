@@ -45,7 +45,8 @@ export default function GoogleSignInButton({ onCredential, onError, disabled = f
         window.google.accounts.id.renderButton(buttonRef.current, {
           type: "standard",
           theme: "outline",
-          size: "large",
+          // Google's medium button is not personalized with the account name/email.
+          size: "medium",
           text: "continue_with",
           shape: "rectangular",
           width: Math.min(buttonRef.current.parentElement?.clientWidth || 360, 400),

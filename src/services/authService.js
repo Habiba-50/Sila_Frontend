@@ -31,11 +31,7 @@ export function signupWithGoogle(idToken) {
 }
 
 export function loginWithGoogle(idToken) {
-  // The backend login controller forwards req.body itself as the token, so send
-  // a JSON string here (signup correctly expects an { idToken } object).
-  return apiClient.post("/auth/login/gmail", JSON.stringify(idToken), {
-    headers: { "Content-Type": "application/json" },
-  });
+  return apiClient.post("/auth/login/gmail", { idToken });
 }
 
 // POST /auth/forgot-password-otp  { email }
