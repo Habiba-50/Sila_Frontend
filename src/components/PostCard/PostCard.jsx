@@ -23,7 +23,7 @@ function timeAgo(dateStr) {
   return `${Math.floor(hrs / 24)}d`;
 }
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, onDismiss }) {
   const { userData } = useContext(UserContext);
   const [showComments, setShowComments] = useState(false);
   const queryClient = useQueryClient();
@@ -149,6 +149,17 @@ export default function PostCard({ post }) {
                 className="ml-auto text-xs text-ink-faint hover:text-like"
               >
                 Delete
+              </button>
+            )}
+            {onDismiss && (
+              <button
+                type="button"
+                onClick={() => onDismiss(postId)}
+                aria-label="Hide post from this feed"
+                title="Hide post"
+                className={`${isOwner ? "" : "ml-auto "}flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xl leading-none text-ink-faint hover:bg-black/[0.06] hover:text-ink`}
+              >
+                ×
               </button>
             )}
           </div>

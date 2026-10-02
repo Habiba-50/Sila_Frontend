@@ -8,6 +8,27 @@ import { getId } from "../../utils/api";
 import Avatar from "../Avatar/Avatar";
 import MentionInput from "../MentionInput/MentionInput";
 
+function getReactionEntries(item) {
+  if (Array.isArray(item?.likes)) return item.likes;
+  if (Array.isArray(item?.reactions)) return item.reactions;
+  return [];
+}
+
+function normalizeReactionValue(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const aliases = { LIKE: 1, LOVE: 2, LAUGH: 3, HAHA: 3, WOW: 4, SAD: 5, ANGRY: 6 };
+  return aliases[String(value).toUpperCase()] ?? value;
+}
+
+function getUserReaction(entries, userId) {
+  if (!userId) return null;
+  return entries.find((entry) => {
+    const reactor = entry?.userId ?? entry?.user;
+    const reactorId = getId(reactor) ?? reactor;
+    return reactorId && String(reactorId) === String(userId);
+  });
+}
+
 export default function CommentItem({ postId, comment, isPostOwner = false }) {
   const { userData } = useContext(UserContext);
   const commentAuthor = comment?.createdBy ?? comment?.user ?? comment?.author;
@@ -62,12 +83,11 @@ export default function CommentItem({ postId, comment, isPostOwner = false }) {
   const replyReact = (replyId, value) =>
     commentService.reactToReply(postId, getId(comment), replyId, value).then(invalidate);
 
-  const commentUserReaction = Array.isArray(comment?.reactions)
-    ? comment.reactions.find(
-        (r) => (r?.user?._id || r?.user || r?.userId?._id || r?.userId) === userData?._id
-      )
-    : null;
-  const myReaction = comment?.myReaction ?? commentUserReaction?.react ?? commentUserReaction?.type ?? commentUserReaction?.reaction;
+  const commentReactions = getReactionEntries(comment);
+  const commentUserReaction = getUserReaction(commentReactions, currentUserId);
+  const myReaction = normalizeReactionValue(
+    comment?.myReaction ?? commentUserReaction?.react ?? commentUserReaction?.type ?? commentUserReaction?.reaction
+  );
 
   return (
     <div className="py-3">
@@ -80,7 +100,7 @@ export default function CommentItem({ postId, comment, isPostOwner = false }) {
           </div>
           <div className="flex items-center gap-1 mt-0.5">
             <ReactionButton
-              count={comment?.reactions?.length}
+              count={commentReactions.length}
               myReaction={myReaction}
               onReact={(v) => reactMutation.mutate(v)}
             />
@@ -111,12 +131,11 @@ export default function CommentItem({ postId, comment, isPostOwner = false }) {
                   replyAuthor?.username ||
                   [replyAuthor?.firstName, replyAuthor?.lastName].filter(Boolean).join(" ") ||
                   "Member";
-                const replyUserReaction = Array.isArray(reply?.reactions)
-                  ? reply.reactions.find(
-                      (r) => (r?.user?._id || r?.user || r?.userId?._id || r?.userId) === userData?._id
-                    )
-                  : null;
-                const replyMyReaction = reply?.myReaction ?? replyUserReaction?.react ?? replyUserReaction?.type ?? replyUserReaction?.reaction;
+                const replyReactions = getReactionEntries(reply);
+                const replyUserReaction = getUserReaction(replyReactions, currentUserId);
+                const replyMyReaction = normalizeReactionValue(
+                  reply?.myReaction ?? replyUserReaction?.react ?? replyUserReaction?.type ?? replyUserReaction?.reaction
+                );
 
                 return (
                   <div key={getId(reply)} className="flex gap-2">
@@ -128,7 +147,7 @@ export default function CommentItem({ postId, comment, isPostOwner = false }) {
                       </div>
                       <div className="flex items-center gap-1">
                         <ReactionButton
-                          count={reply?.reactions?.length}
+                          count={replyReactions.length}
                           myReaction={replyMyReaction}
                           onReact={(v) => replyReact(getId(reply), v)}
                         />

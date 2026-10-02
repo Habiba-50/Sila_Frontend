@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import usePosts from "../../Hooks/usePosts";
+import useFeed from "../../Hooks/useFeed";
 import useFriendRequestsReceived from "../../Hooks/useFriendRequestsReceived";
 import * as friendRequestService from "../../services/friendRequestService";
 import CreatePost from "../CreatePost/CreatePost";
@@ -77,9 +78,14 @@ function FindPeopleWidget() {
 }
 
 export default function Home() {
-  const { data, isLoading, isError, error } = usePosts();
-console.log("feed data:", data, "error:", error);
+  const { data, isLoading, isError, error } = useFeed();
+  const [dismissedPostIds, setDismissedPostIds] = useState(() => new Set());
   const posts = extractList(data);
+  const visiblePosts = posts.filter((post) => !dismissedPostIds.has(String(getId(post))));
+
+  function dismissPost(postId) {
+    setDismissedPostIds((current) => new Set(current).add(String(postId)));
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,600px)_280px] gap-7">
@@ -90,14 +96,19 @@ console.log("feed data:", data, "error:", error);
         {isLoading && <Loader />}
         {isError && (
 <p className="text-sm text-like py-6">Couldn't load the feed right now. ({error?.message})</p>        )}
-        {!isLoading && !isError && posts.length === 0 && (
+        {!isLoading && !isError && visiblePosts.length === 0 && posts.length === 0 && (
           <p className="text-sm text-ink-faint py-8 text-center">
             No posts yet — follow people or write the first one.
           </p>
         )}
+        {!isLoading && !isError && visiblePosts.length === 0 && posts.length > 0 && (
+          <p className="text-sm text-ink-faint py-8 text-center">
+            No posts to show right now. Reload the page to see them again.
+          </p>
+        )}
 
-        {posts.map((post) => (
-          <PostCard key={getId(post)} post={post} />
+        {visiblePosts.map((post) => (
+          <PostCard key={getId(post)} post={post} onDismiss={dismissPost} />
         ))}
       </div>
 

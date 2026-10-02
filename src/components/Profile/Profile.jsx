@@ -30,6 +30,55 @@ function parseIsFollowing(res) {
   return positive.includes(s);
 }
 
+function FollowedUserButton({ person, personId, requestId, onOpen }) {
+  const hasName = Boolean(
+    person?.username ||
+    person?.fullName ||
+    person?.name ||
+    person?.firstName ||
+    person?.lastName
+  );
+  const hasPicture = Boolean(person?.profilePicture || person?.profileImage || person?.avatar);
+  const { data: fetchedPerson } = useQuery({
+    queryKey: ["user", personId],
+    queryFn: async () => {
+      const response = await userService.getUserById(personId);
+      const payload = response?.data?.data ?? response?.data;
+      return payload?.user ?? payload?.data?.user ?? payload;
+    },
+    enabled: Boolean(personId) && (!hasName || !hasPicture),
+    staleTime: 60_000,
+  });
+  const displayedPerson = fetchedPerson || person;
+  const personName =
+    displayedPerson?.username ||
+    displayedPerson?.fullName ||
+    displayedPerson?.name ||
+    [displayedPerson?.firstName, displayedPerson?.lastName].filter(Boolean).join(" ").trim() ||
+    displayedPerson?.email ||
+    "User";
+  const personPicture = displayedPerson?.profilePicture ?? displayedPerson?.profileImage ?? displayedPerson?.avatar;
+
+  return (
+    <button
+      key={personId ?? requestId}
+      type="button"
+      onClick={() => personId && onOpen(personId)}
+      disabled={!personId}
+      className="flex w-full items-center gap-3 py-3 text-left hover:bg-black/[0.03] disabled:cursor-default"
+    >
+      <div className="w-10 h-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-sm font-semibold">
+        {personPicture ? (
+          <img src={fileUrl(personPicture)} alt="" className="w-full h-full object-cover" />
+        ) : (
+          initials(personName)
+        )}
+      </div>
+      <span className="font-semibold text-sm">{personName}</span>
+    </button>
+  );
+}
+
 export default function Profile() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -273,30 +322,26 @@ export default function Profile() {
 
   function renderFollowedUsers(users) {
     return users.map((follow) => {
-      const person = follow?.followerId ?? follow?.followingId ?? follow?.user ?? follow;
-      const personId = getId(person);
-      const personName =
-        person?.username ||
-        [person?.firstName, person?.lastName].filter(Boolean).join(" ") ||
-        "User";
+      const personSource =
+        follow?.followerId ??
+        follow?.follower ??
+        follow?.followingId ??
+        follow?.following ??
+        follow?.user ??
+        follow?.userId;
+      const person = personSource?.user ?? personSource?.profile ?? personSource;
+      const personId =
+        getId(person) ??
+        (typeof personSource === "string" ? personSource : null);
 
       return (
-        <button
+        <FollowedUserButton
           key={personId ?? getId(follow)}
-          type="button"
-          onClick={() => personId && navigate(`/profile/${personId}`)}
-          disabled={!personId}
-          className="flex w-full items-center gap-3 py-3 text-left hover:bg-black/[0.03] disabled:cursor-default"
-        >
-          <div className="w-10 h-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-sm font-semibold">
-            {person?.profilePicture ? (
-              <img src={fileUrl(person.profilePicture)} alt="" className="w-full h-full object-cover" />
-            ) : (
-              initials(personName)
-            )}
-          </div>
-          <span className="font-semibold text-sm">{personName}</span>
-        </button>
+          person={person}
+          personId={personId}
+          requestId={getId(follow)}
+          onOpen={(idToOpen) => navigate(`/profile/${idToOpen}`)}
+        />
       );
     });
   }

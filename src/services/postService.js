@@ -20,6 +20,11 @@ export function getPosts(params) {
   return apiClient.get("/post", { params });
 }
 
+// GET /post/feed (own, followed, and accepted-friend posts for the home feed)
+export function getFeed(params) {
+  return apiClient.get("/post/feed", { params });
+}
+
 // PATCH /post/:id/react?react=<reactionType>
 export function reactToPost(id, react) {
   return apiClient.patch(`/post/${id}/react`, null, { params: { react } });
