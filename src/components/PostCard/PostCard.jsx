@@ -179,29 +179,30 @@ export default function PostCard({ post }) {
             );
           })()}
 
-          <div className="flex items-center gap-1 mt-1">
+          <div className="grid grid-cols-4 items-start gap-1 mt-1 sm:flex sm:items-center">
             <ReactionButton
               count={postReactions.length}
               myReaction={myReaction}
               onReact={(v) => reactMutation.mutate(v)}
+              mobileCompact
             />
             <button
               onClick={() => setShowComments((s) => !s)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13.5px] font-medium text-ink-faint hover:bg-black/[0.03]"
+              className="flex w-full flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg px-1 py-1.5 text-xs font-medium text-ink-faint hover:bg-black/[0.03] sm:w-auto sm:flex-row sm:gap-1.5 sm:px-3 sm:text-[13.5px]"
             >
               💬 {visibleCommentCount} comments
             </button>
             <button
               onClick={() => repostMutation.mutate()}
               disabled={repostMutation.isPending}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13.5px] font-medium text-ink-faint hover:bg-black/[0.03]"
+              className="flex w-full flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg px-1 py-1.5 text-xs font-medium text-ink-faint hover:bg-black/[0.03] sm:w-auto sm:flex-row sm:gap-1.5 sm:px-3 sm:text-[13.5px]"
             >
               ⤴ {post?.repostId ? "Undo share" : "Share"}
             </button>
             <button
               onClick={() => bookmarkMutation.mutate({ wasSaved: isBookmarked })}
               disabled={bookmarkMutation.isPending || bookmarkStatusQuery.isLoading}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13.5px] font-medium hover:bg-black/[0.03] disabled:opacity-60 ${
+              className={`flex w-full flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg px-1 py-1.5 text-xs font-medium hover:bg-black/[0.03] disabled:opacity-60 sm:w-auto sm:flex-row sm:gap-1.5 sm:px-3 sm:text-[13.5px] ${
                 isBookmarked ? "text-gold font-semibold" : "text-ink-faint"
               }`}
             >

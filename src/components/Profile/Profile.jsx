@@ -326,9 +326,9 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="mt-3 px-1 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-xl font-semibold">{profileName}</h1>
+      <div className="mt-3 px-1 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="min-w-0 sm:flex-1">
+          <h1 className="font-display text-xl font-semibold break-words">{profileName}</h1>
           {profile.bio && <p className="text-sm text-ink-soft mt-1">{profile.bio}</p>}
         </div>
 
@@ -340,7 +340,7 @@ export default function Profile() {
             {editing ? "Close" : "Edit profile"}
           </button>
         ) : (
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:flex-shrink-0">
             <button
               onClick={() => followMutation.mutate(!isFollowing)}
               disabled={followMutation.isPending}
@@ -385,7 +385,7 @@ export default function Profile() {
               </>
             )}
 
-            <div className="relative">
+            <div className="relative ml-auto sm:ml-0">
               <button
                 onClick={() => setMenuOpen((o) => !o)}
                 className="border border-border text-ink-soft px-2.5 py-2 rounded-lg"

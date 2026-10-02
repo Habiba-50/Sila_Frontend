@@ -3,7 +3,7 @@ import { REACTIONS, getReaction } from "../../utils/constants";
 
 // Shared like/react control used on posts, comments, and replies.
 // `myReaction` is the reaction value (1-6) the current user already picked, or falsy.
-export default function ReactionButton({ count = 0, myReaction, onReact }) {
+export default function ReactionButton({ count = 0, myReaction, onReact, mobileCompact = false }) {
   const [open, setOpen] = useState(false);
   const [localReaction, setLocalReaction] = useState(myReaction);
   const timerRef = useRef(null);
@@ -60,14 +60,14 @@ export default function ReactionButton({ count = 0, myReaction, onReact }) {
 
   return (
     <div
-      className="relative inline-block"
+      className={`relative inline-block ${mobileCompact ? "w-full sm:w-auto" : ""}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       <button
         type="button"
         onClick={handleMainButtonClick}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13.5px] font-medium transition-colors hover:bg-black/[0.04] ${
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13.5px] font-medium transition-colors hover:bg-black/[0.04] ${mobileCompact ? "w-full flex-col justify-center gap-1 px-1 text-xs whitespace-nowrap sm:w-auto sm:flex-row sm:gap-1.5 sm:px-3 sm:text-[13.5px]" : ""} ${
           active ? `${active.color || "text-primary"} font-semibold` : "text-ink-faint"
         }`}
       >

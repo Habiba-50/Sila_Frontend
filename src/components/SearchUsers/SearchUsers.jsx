@@ -6,8 +6,9 @@ import { followUser, unfollowUser } from "../../services/followService";
 import { sendFriendRequest, getMyFriends } from "../../services/friendRequestService";
 import toast from "react-hot-toast";
 import Loader from "../Loader/Loader";
-import { initials, ensureArray } from "../../utils/constants";
+import { ensureArray } from "../../utils/constants";
 import { extractList, getId } from "../../utils/api";
+import Avatar from "../Avatar/Avatar";
 
 export default function SearchUsers() {
   const [term, setTerm] = useState("");
@@ -91,9 +92,14 @@ export default function SearchUsers() {
           return (
             <div key={getId(u)} className="flex items-center gap-3 py-3">
               <Link to={`/profile/${getId(u)}`} className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                  {initials(u.username)}
-                </div>
+                <Avatar
+                  user={{
+                    ...u,
+                    profilePicture: u.profilePicture ?? u.profileImage,
+                  }}
+                  size={40}
+                  textSize="text-sm"
+                />
                 <div className="min-w-0">
                   <p className="font-semibold text-sm truncate">{u.username}</p>
                   {u.email && <p className="text-xs text-ink-faint truncate">{u.email}</p>}
