@@ -198,7 +198,14 @@ export default function ChatDirect() {
   return (
     <div className="flex flex-col h-[calc(100vh-160px)]">
       <div className="flex items-center gap-3 pb-3 border-b border-border mb-3">
-        <Link to="/chats" className="text-ink-faint lg:hidden">←</Link>
+        <Link
+          to="/chats"
+          className="inline-flex items-center gap-2 text-sm text-ink-soft hover:text-primary flex-shrink-0"
+          aria-label="Back to messages"
+        >
+          <span aria-hidden="true" className="text-lg leading-none">←</span>
+          <span>Back to messages</span>
+        </Link>
         {displayAvatar ? (
           <img src={displayAvatar} alt="" className="w-10 h-10 rounded-full object-cover" />
         ) : (

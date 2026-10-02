@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as friendRequestService from "../../services/friendRequestService";
 import Loader from "../Loader/Loader";
-import { initials, ensureArray } from "../../utils/constants";
+import Avatar from "../Avatar/Avatar";
 import { extractList, getId } from "../../utils/api";
 
 export default function FriendRequests() {
@@ -53,13 +54,24 @@ export default function FriendRequests() {
 
       <div className="divide-y divide-border">
         {requests.map((r) => {
-          const person = tab === "received" ? r.sender : r.receiver;
+          const person = tab === "received"
+            ? (r.senderId ?? r.sender)
+            : (r.receiverId ?? r.receiver);
+          const personId = getId(person);
+          const personName = person?.username || [person?.firstName, person?.lastName].filter(Boolean).join(" ").trim() || person?.email || "Someone";
           return (
             <div key={getId(r)} className="flex items-center gap-3 py-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-sm font-semibold">
-                {initials(person?.username)}
-              </div>
-              <p className="font-semibold text-sm flex-1 truncate">{person?.username || "Someone"}</p>
+              {personId ? (
+                <Link to={`/profile/${personId}`} className="flex items-center gap-3 flex-1 min-w-0 hover:text-primary" aria-label={`View ${personName}'s profile`}>
+                  <Avatar user={person} size={40} />
+                  <span className="font-semibold text-sm truncate">{personName}</span>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Avatar user={person} size={40} />
+                  <span className="font-semibold text-sm truncate">{personName}</span>
+                </div>
+              )}
 
               {tab === "received" ? (
                 <div className="flex gap-2">

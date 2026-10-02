@@ -6,8 +6,7 @@ import * as friendRequestService from "../../services/friendRequestService";
 import CreatePost from "../CreatePost/CreatePost";
 import PostCard from "../PostCard/PostCard";
 import Loader from "../Loader/Loader";
-import { initials, ensureArray } from "../../utils/constants";
-import React from "react"
+import Avatar from "../Avatar/Avatar";
 import { extractList, getId } from "../../utils/api";
 
 function FriendRequestsWidget() {
@@ -30,14 +29,24 @@ function FriendRequestsWidget() {
     <div className="bg-panel border border-border rounded-2xl p-4">
       <h3 className="font-display font-semibold text-[16.5px] mb-3">Friend requests</h3>
       <div className="divide-y divide-border">
-        {requests.map((r) => (
+        {requests.map((r) => {
+          const sender = r?.senderId ?? r?.sender ?? {};
+          const senderId = getId(sender);
+          const senderName = sender?.username || [sender?.firstName, sender?.lastName].filter(Boolean).join(" ").trim() || sender?.email || "Someone";
+
+          return (
           <div key={getId(r)} className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-ink-faint to-border text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
-              {initials(r?.sender?.username)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">{r?.sender?.username || "Someone"}</p>
-            </div>
+            {senderId ? (
+              <Link to={`/profile/${senderId}`} className="flex items-center gap-2.5 flex-1 min-w-0 hover:text-primary" aria-label={`View ${senderName}'s profile`}>
+                <Avatar user={sender} size={36} textSize="text-xs" />
+                <span className="text-sm font-semibold truncate">{senderName}</span>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <Avatar user={sender} size={36} textSize="text-xs" />
+                <span className="text-sm font-semibold truncate">{senderName}</span>
+              </div>
+            )}
             <button
               onClick={() => respond.mutate({ id: getId(r), accept: true })}
               className="bg-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
@@ -45,7 +54,8 @@ function FriendRequestsWidget() {
               Accept
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
