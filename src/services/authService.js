@@ -2,8 +2,10 @@ import apiClient from "./apiClient";
 
 // POST /auth/signup  { username, email, password, confirmPassword, gender, phone }
 export function signup(values) {
+  const { phone, ...signupValues } = values;
   return apiClient.post("/auth/signup", {
-    ...values,
+    ...signupValues,
+    ...(phone?.trim() ? { phone: phone.trim() } : {}),
     gender: Number(values.gender),
   });
 }
@@ -29,7 +31,11 @@ export function signupWithGoogle(idToken) {
 }
 
 export function loginWithGoogle(idToken) {
-  return apiClient.post("/auth/login/gmail", { idToken });
+  // The backend login controller forwards req.body itself as the token, so send
+  // a JSON string here (signup correctly expects an { idToken } object).
+  return apiClient.post("/auth/login/gmail", JSON.stringify(idToken), {
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 // POST /auth/forgot-password-otp  { email }

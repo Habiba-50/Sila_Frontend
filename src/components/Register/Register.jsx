@@ -12,7 +12,10 @@ const phoneRegex = /^01[0125][0-9]{8}$/;
 const validationSchema = Yup.object({
   username: Yup.string().min(3, "At least 3 characters").required("Name is required"),
   email: Yup.string().email("Enter a valid email").required("Email is required"),
-  phone: Yup.string().matches(phoneRegex, "Enter a valid Egyptian phone number").required("Phone is required"),
+  phone: Yup.string().matches(phoneRegex, {
+    message: "Enter a valid Egyptian phone number",
+    excludeEmptyString: true,
+  }),
   gender: Yup.number().required("Select a gender"),
   password: Yup.string()
     .min(8, "At least 8 characters")
@@ -104,7 +107,7 @@ export default function Register() {
       <form onSubmit={formik.handleSubmit} className="space-y-4">
         {field("username", "Full name")}
         {field("email", "Email", "email")}
-        {field("phone", "Phone number")}
+        {field("phone", "Phone number (optional)")}
 
         <div>
           <label className="block text-sm font-medium mb-1.5" htmlFor="gender">Gender</label>
