@@ -18,7 +18,12 @@ npm run dev
 ```
 VITE_API_BASE_URL=https://socialbe.bonto.run/
 VITE_FIREBASE_...
+VITE_GOOGLE_CLIENT_ID=your-google-oauth-web-client-id
 ```
+
+Google sign-in requires a Google OAuth 2.0 Web client ID. Set it as
+`VITE_GOOGLE_CLIENT_ID` in the frontend environment and add the deployed frontend origin
+to that OAuth client's authorized JavaScript origins.
 
 If you ever swap Firebase projects, update `.env` **and** the hardcoded copy in
 `public/firebase-messaging-sw.js` — service workers can't read Vite env vars at runtime.

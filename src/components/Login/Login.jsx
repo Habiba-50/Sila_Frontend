@@ -3,9 +3,10 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { login } from "../../services/authService";
+import { login, loginWithGoogle } from "../../services/authService";
 import { getFcmToken } from "../../services/pushNotifications";
 import { UserContext } from "../../context/UserContext";
+import GoogleSignInButton from "../GoogleSignInButton/GoogleSignInButton";
 
 const validationSchema = Yup.object({
   email: Yup.string().email("Enter a valid email").required("Email is required"),
@@ -33,6 +34,25 @@ export default function Login() {
       navigate("/");
     } catch (error) {
       setApiError(error?.response?.data?.message || "Couldn't log you in. Check your details and try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleGoogleLogin(idToken) {
+    setApiError("");
+    setIsLoading(true);
+    try {
+      const { data } = await loginWithGoogle(idToken);
+      const token = data?.data?.access_token;
+      const refreshToken = data?.data?.refresh_token;
+      if (!token) throw new Error("No token returned from the server");
+      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+      loginSuccess(token);
+      toast.success("Welcome back!");
+      navigate("/");
+    } catch (error) {
+      setApiError(error?.response?.data?.message || "Couldn't log in with Google. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -96,6 +116,19 @@ export default function Login() {
           {isLoading ? "Logging in…" : "Log in"}
         </button>
       </form>
+
+      <div className="mt-5">
+        <div className="flex items-center gap-3 mb-4 text-xs text-ink-soft">
+          <span className="h-px flex-1 bg-border" />
+          <span>or continue with</span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <GoogleSignInButton
+          onCredential={handleGoogleLogin}
+          onError={setApiError}
+          disabled={isLoading}
+        />
+      </div>
 
       <p className="text-center text-sm text-ink-soft mt-6">
         New here?{" "}

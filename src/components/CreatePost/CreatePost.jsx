@@ -4,10 +4,12 @@ import toast from "react-hot-toast";
 import { createPost } from "../../services/postService";
 import { UserContext } from "../../context/UserContext";
 import Avatar from "../Avatar/Avatar";
+import MentionInput from "../MentionInput/MentionInput";
 
 export default function CreatePost() {
   const { userData } = useContext(UserContext);
   const [content, setContent] = useState("");
+  const [tags, setTags] = useState([]);
   const [image, setImage] = useState(null);
   const queryClient = useQueryClient();
 
@@ -15,11 +17,13 @@ export default function CreatePost() {
     mutationFn: () => {
       const formData = new FormData();
       formData.append("content", content);
+      tags.forEach((friend) => formData.append("tags", friend.id));
       if (image) formData.append("attachments", image);
       return createPost(formData);
     },
     onSuccess: () => {
       setContent("");
+      setTags([]);
       setImage(null);
       queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
@@ -32,12 +36,14 @@ export default function CreatePost() {
     <div className="bg-panel border border-border rounded-2xl p-4 sm:p-4.5 mb-5">
       <div className="flex gap-3">
         <Avatar user={userData} size={40} />
-        <textarea
+        <MentionInput
           value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Share something with your circle…"
+          onChange={setContent}
+          onTagsChange={setTags}
+          placeholder="Share something with your circle… Type @ to tag a friend"
           rows={2}
-          className="flex-1 resize-none border-none outline-none text-[15.5px] pt-1.5 bg-transparent"
+          className="flex-1 min-w-0"
+          inputClassName="w-full resize-none border-none outline-none text-[15.5px] pt-1.5 bg-transparent"
         />
       </div>
 

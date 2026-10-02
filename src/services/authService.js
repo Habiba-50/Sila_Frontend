@@ -23,6 +23,15 @@ export function login(values) {
   return apiClient.post("/auth/login", values);
 }
 
+// Google Identity Services returns an ID token that the backend verifies.
+export function signupWithGoogle(idToken) {
+  return apiClient.post("/auth/signup/gmail", { idToken });
+}
+
+export function loginWithGoogle(idToken) {
+  return apiClient.post("/auth/login/gmail", { idToken });
+}
+
 // POST /auth/forgot-password-otp  { email }
 export function forgotPasswordOtp(values) {
   return apiClient.post("/auth/forgot-password-otp", values);

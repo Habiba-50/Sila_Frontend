@@ -6,6 +6,7 @@ import { UserContext } from "../../context/UserContext";
 import ReactionButton from "../ReactionButton/ReactionButton";
 import { getId } from "../../utils/api";
 import Avatar from "../Avatar/Avatar";
+import MentionInput from "../MentionInput/MentionInput";
 
 export default function CommentItem({ postId, comment, isPostOwner = false }) {
   const { userData } = useContext(UserContext);
@@ -21,6 +22,7 @@ export default function CommentItem({ postId, comment, isPostOwner = false }) {
   };
   const [replying, setReplying] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [replyTags, setReplyTags] = useState([]);
   const queryClient = useQueryClient();
 
   function invalidate() {
@@ -45,9 +47,13 @@ export default function CommentItem({ postId, comment, isPostOwner = false }) {
   });
 
   const replyMutation = useMutation({
-    mutationFn: () => commentService.replyToComment(postId, getId(comment), { content: replyText }),
+    mutationFn: () => commentService.replyToComment(postId, getId(comment), {
+      content: replyText,
+      tags: replyTags.map((friend) => friend.id),
+    }),
     onSuccess: () => {
       setReplyText("");
+      setReplyTags([]);
       setReplying(false);
       invalidate();
     },
@@ -146,12 +152,14 @@ export default function CommentItem({ postId, comment, isPostOwner = false }) {
 
           {replying && (
             <div className="flex gap-2 mt-2">
-              <input
+              <MentionInput
                 value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
+                onChange={setReplyText}
+                onTagsChange={setReplyTags}
                 placeholder={`Reply to ${commentAuthorName}…`}
-                className="flex-1 text-sm border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                onKeyDown={(e) => e.key === "Enter" && replyText.trim() && replyMutation.mutate()}
+                onKeyDown={(event) => event.key === "Enter" && replyText.trim() && replyMutation.mutate()}
+                className="flex-1 min-w-0"
+                inputClassName="w-full text-sm border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
               <button
                 disabled={!replyText.trim() || replyMutation.isPending}

@@ -6,6 +6,7 @@ import CommentItem from "./CommentItem";
 import { initials } from "../../utils/constants";
 import { getId } from "../../utils/api";
 import Avatar from "../Avatar/Avatar";
+import MentionInput from "../MentionInput/MentionInput";
 
 // NOTE: the Postman collection doesn't expose a "list comments for a post"
 // endpoint — this assumes the post document already comes back populated
@@ -17,12 +18,17 @@ export default function Comments({ postId, comments = [], isPostOwner = false })
     : [];
   const { userData } = useContext(UserContext);
   const [text, setText] = useState("");
+  const [tags, setTags] = useState([]);
   const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => commentService.createComment(postId, { content: text }),
+    mutationFn: () => commentService.createComment(postId, {
+      content: text,
+      tags: tags.map((friend) => friend.id),
+    }),
     onSuccess: () => {
       setText("");
+      setTags([]);
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["post", postId] });
     },
@@ -33,12 +39,14 @@ export default function Comments({ postId, comments = [], isPostOwner = false })
       <div className="flex gap-2.5 mb-1">
         <Avatar user={userData} size={32} textSize="text-[11px]" />
         <div className="flex-1 flex gap-2">
-          <input
+          <MentionInput
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={setText}
+            onTagsChange={setTags}
             placeholder="Write a comment…"
-            className="flex-1 text-sm border border-border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
-            onKeyDown={(e) => e.key === "Enter" && text.trim() && mutate()}
+            onKeyDown={(event) => event.key === "Enter" && text.trim() && mutate()}
+            className="flex-1 min-w-0"
+            inputClassName="w-full text-sm border border-border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <button
             disabled={!text.trim() || isPending}
