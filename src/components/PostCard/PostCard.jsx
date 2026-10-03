@@ -29,6 +29,11 @@ export default function PostCard({ post, onDismiss }) {
   const queryClient = useQueryClient();
 
   const author = getAuthor(post) || {};
+  const authorName =
+    author?.username ||
+    [author?.firstName, author?.lastName].filter(Boolean).join(" ").trim() ||
+    author?.email ||
+    "Member";
   const isOwner = getId(author) === getId(userData);
   const postId = getId(post);
   const postReactions = Array.isArray(post?.reactions)
@@ -140,7 +145,7 @@ export default function PostCard({ post, onDismiss }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 flex-wrap">
             <Link to={`/profile/${getId(author)}`} className="font-semibold text-[15px] hover:underline">
-              {author?.username || "Member"}
+              {authorName}
             </Link>
             <span className="text-ink-faint text-[13.5px]">· {timeAgo(post?.createdAt)}</span>
             {isOwner && (
