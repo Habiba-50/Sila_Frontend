@@ -92,16 +92,14 @@ export default function SearchUsers() {
           return (
             <div key={getId(u)} className="flex items-center gap-3 py-3">
               <Link to={`/profile/${getId(u)}`} className="flex items-center gap-3 flex-1 min-w-0">
-                <Avatar
-                  user={{
-                    ...u,
-                    profilePicture: u.profilePicture ?? u.profileImage,
-                  }}
-                  size={40}
-                  textSize="text-sm"
-                />
+                <Avatar user={u} size={40} textSize="text-sm" />
                 <div className="min-w-0">
-                  <p className="font-semibold text-sm truncate">{u.username}</p>
+                  <p className="font-semibold text-sm truncate">
+                    {u.username ||
+                      [u.firstName, u.lastName].filter(Boolean).join(" ").trim() ||
+                      u.email ||
+                      "Member"}
+                  </p>
                   {u.email && <p className="text-xs text-ink-faint truncate">{u.email}</p>}
                 </div>
               </Link>
