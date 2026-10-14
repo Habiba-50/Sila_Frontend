@@ -422,7 +422,12 @@ export default function Profile() {
                   Friends ✓
                 </button>
                 <button
-                  onClick={() => navigate(`/chats/user/${id}`)}
+                  onClick={() => navigate(`/chats/user/${id}`, {
+                    state: {
+                      title: profileName,
+                      avatarUrl: profile?.profilePicture || profile?.profileImage || profile?.avatar,
+                    },
+                  })}
                   className="bg-primary text-white text-sm font-semibold px-4 py-2 rounded-lg"
                 >
                   Message

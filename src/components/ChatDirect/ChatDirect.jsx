@@ -11,6 +11,7 @@ import ChatComposer from "../Chat/ChatComposer";
 import Loader from "../Loader/Loader";
 import { initials } from "../../utils/constants";
 import { getId } from "../../utils/api";
+import { fileUrl } from "../../services/fileService";
 
 export default function ChatDirect() {
   const { userId } = useParams();
@@ -31,7 +32,8 @@ export default function ChatDirect() {
   });
 
   const displayTitle = passedTitle || otherUser?.username || "Conversation";
-  const displayAvatar = passedAvatar || null;
+  const avatarPath = passedAvatar || otherUser?.profilePicture || otherUser?.profileImage || otherUser?.avatar;
+  const displayAvatar = avatarPath ? fileUrl(avatarPath) : null;
 
   const { data: history, isLoading } = useQuery({
     queryKey: ["direct-chat", userId],
