@@ -37,15 +37,20 @@ export default function Comments({ postId, comments = [], isPostOwner = false })
     onSuccess: (response, variables) => {
       const payload = response?.data?.data ?? response?.data;
       const returnedComment = payload?.comment ?? payload?.data?.comment ?? payload?.data ?? payload;
-      const savedComment = returnedComment && typeof returnedComment === "object" && returnedComment.content
-        ? returnedComment
-        : {
-            _id: `local-comment-${Date.now()}`,
-            content: variables.content,
-            createdBy: userData,
-            createdAt: new Date().toISOString(),
-            replies: [],
-          };
+      const currentUser = userData?.user ?? userData?.data?.user ?? userData;
+      const responseAuthor = returnedComment?.createdBy ?? returnedComment?.user ?? returnedComment?.author;
+      const authorHasProfile = responseAuthor && typeof responseAuthor === "object" && (
+        responseAuthor.username || responseAuthor.firstName || responseAuthor.lastName ||
+        responseAuthor.fullName || responseAuthor.profilePicture || responseAuthor.profileImage
+      );
+      const savedComment = {
+        ...(returnedComment && typeof returnedComment === "object" && returnedComment.content ? returnedComment : {}),
+        _id: getId(returnedComment) ?? `local-comment-${Date.now()}`,
+        content: returnedComment?.content || variables.content,
+        createdBy: authorHasProfile ? responseAuthor : currentUser,
+        createdAt: returnedComment?.createdAt || new Date().toISOString(),
+        replies: returnedComment?.replies || [],
+      };
       setSubmittedComments((current) => [...current, savedComment]);
       setText("");
       setTags([]);

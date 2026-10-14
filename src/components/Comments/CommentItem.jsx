@@ -34,7 +34,10 @@ export default function CommentItem({ postId, comment, isPostOwner = false }) {
   const commentAuthor = comment?.createdBy ?? comment?.user ?? comment?.author;
   const commentAuthorName =
     commentAuthor?.username ||
-    [commentAuthor?.firstName, commentAuthor?.lastName].filter(Boolean).join(" ") ||
+    commentAuthor?.fullName ||
+    commentAuthor?.name ||
+    [commentAuthor?.firstName, commentAuthor?.lastName].filter(Boolean).join(" ").trim() ||
+    commentAuthor?.email ||
     "Member";
   const currentUserId = getId(userData);
   const isOwnedByCurrentUser = (author) => {

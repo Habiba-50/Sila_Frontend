@@ -5,13 +5,15 @@ import { initials } from "../../utils/constants";
 // Pass any user-like object (has .username and/or .profilePicture / .profileImage).
 // `size` is in pixels, `textSize` is a Tailwind class for the initials.
 export default function Avatar({ user, size = 40, textSize = "text-sm", className = "" }) {
-  const picture = user?.profilePicture ?? user?.profileImage ?? null;
+  const picture = user?.profilePicture ?? user?.profileImage ?? user?.avatar ?? null;
   const src = picture ? fileUrl(picture) : null;
   const [imgError, setImgError] = useState(false);
   const style = { width: size, height: size };
 
   const displayName =
     user?.username ||
+    user?.fullName ||
+    user?.name ||
     [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
     user?.email ||
     "";
