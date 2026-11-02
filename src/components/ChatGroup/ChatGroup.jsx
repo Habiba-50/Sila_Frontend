@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import * as chatService from "../../services/chatService";
 import { searchUsers } from "../../services/userService";
-import { getSocket } from "../../services/socket";
+import { connectSocket, getSocket, waitForSocketConnection } from "../../services/socket";
 import { UserContext } from "../../context/UserContext";
 import MessageBubble from "../Chat/MessageBubble";
 import ChatComposer from "../Chat/ChatComposer";
@@ -18,7 +18,7 @@ export default function ChatGroup() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { userData } = useContext(UserContext);
+  const { userData, token } = useContext(UserContext);
   const queryClient = useQueryClient();
   const [addTerm, setAddTerm] = useState("");
   const [addResults, setAddResults] = useState([]);
@@ -113,9 +113,15 @@ export default function ChatGroup() {
     queryClient.invalidateQueries({ queryKey: ["my-chats"] });
   }
 
-  function sendMessage(text) {
-    const socket = getSocket();
-    if (!socket?.connected) return toast.error("Chat is disconnected. Please try again.");
+  async function sendMessage(text) {
+    const socket = connectSocket(token);
+    try {
+      await waitForSocketConnection(socket);
+    } catch (error) {
+      console.error("Group chat socket connection failed:", error);
+      toast.error("Couldn't connect to chat. Please check the server and try again.");
+      return;
+    }
     const content = replyingTo ? `↩ ${replyingTo.content}\n${text}` : text;
     socket.emit("sendGroupMessage", { groupId: id, content });
     setMessages((prev) => [
