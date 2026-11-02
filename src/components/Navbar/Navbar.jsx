@@ -117,8 +117,17 @@ export default function Navbar() {
       toast(`New message from ${senderName}`, { icon: "💬" });
     }
 
+    function handleNewNotification() {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["unread-count"] });
+    }
+
     socket.on("newMessage", handleNewMessage);
-    return () => socket.off("newMessage", handleNewMessage);
+    socket.on("newNotification", handleNewNotification);
+    return () => {
+      socket.off("newMessage", handleNewMessage);
+      socket.off("newNotification", handleNewNotification);
+    };
   }, [token, location.pathname, queryClient]);
 
   useEffect(() => {

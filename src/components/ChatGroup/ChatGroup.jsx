@@ -203,7 +203,7 @@ export default function ChatGroup() {
           {groupIcon ? (
             <img src={groupIcon} alt={`${groupName} group`} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+            <div className="w-12 h-12 rounded-full bg-linear-to-br from-primary to-emerald-400 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
               {initials(groupName)}
             </div>
           )}

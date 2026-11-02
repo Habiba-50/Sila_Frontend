@@ -6,6 +6,7 @@ export default function useUnreadCount(enabled, userId) {
     queryKey: ["unread-count", userId],
     queryFn: () => getUnreadCount().then((res) => res.data?.data?.count ?? res.data?.count ?? 0),
     enabled: enabled && !!userId,
+    refetchInterval: 15000,
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: "always",

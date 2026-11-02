@@ -22,6 +22,7 @@ export default function Notifications() {
   const { data, isLoading } = useQuery({
     queryKey: ["notifications"],
     queryFn: () => notificationService.getNotifications({ page: 1, limit: 20 }).then((r) => r.data),
+    refetchInterval: 15000,
   });
 
     const markAllRead = useMutation({
