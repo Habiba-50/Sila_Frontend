@@ -10,7 +10,7 @@ import MessageBubble from "../Chat/MessageBubble";
 import ChatComposer from "../Chat/ChatComposer";
 import Loader from "../Loader/Loader";
 import { initials } from "../../utils/constants";
-import { extractItem, getId } from "../../utils/api";
+import { extractItem, extractList, getId } from "../../utils/api";
 import { fileUrl } from "../../services/fileService";
 import Avatar from "../Avatar/Avatar";
 
