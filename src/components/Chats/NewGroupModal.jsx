@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { searchUsers } from "../../services/userService";
@@ -14,6 +14,8 @@ export default function NewGroupModal({ onClose }) {
   const [iconPreview, setIconPreview] = useState("");
   const [term, setTerm] = useState("");
   const [results, setResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRequestId = useRef(0);
   const [picked, setPicked] = useState([]);
   const queryClient = useQueryClient();
 
@@ -26,9 +28,24 @@ export default function NewGroupModal({ onClose }) {
 
   async function runSearch(value) {
     setTerm(value);
-    if (!value.trim()) return setResults([]);
-    const { data } = await searchUsers(value);
-    setResults(extractList(data));
+    const requestId = ++searchRequestId.current;
+    if (!value.trim()) {
+      setResults([]);
+      setIsSearching(false);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const { data } = await searchUsers(value.trim());
+      if (requestId === searchRequestId.current) setResults(extractList(data));
+    } catch (error) {
+      if (requestId === searchRequestId.current) {
+        setResults([]);
+        toast.error(error?.response?.data?.message || "Couldn't search for people.");
+      }
+    } finally {
+      if (requestId === searchRequestId.current) setIsSearching(false);
+    }
   }
 
   function togglePick(user) {
@@ -114,6 +131,9 @@ export default function NewGroupModal({ onClose }) {
               <span className="text-sm font-medium">{u.username || [u.firstName, u.lastName].filter(Boolean).join(" ")}</span>
             </button>
           ))}
+          {term.trim() && !isSearching && results.length === 0 && (
+            <p className="text-xs text-ink-faint py-2">No matching people found.</p>
+          )}
         </div>
 
         <div className="flex justify-end gap-2">

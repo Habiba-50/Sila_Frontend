@@ -22,6 +22,8 @@ export default function ChatGroup() {
   const queryClient = useQueryClient();
   const [addTerm, setAddTerm] = useState("");
   const [addResults, setAddResults] = useState([]);
+  const [isSearchingMembers, setIsSearchingMembers] = useState(false);
+  const searchRequestId = useRef(0);
   const [showMembers, setShowMembers] = useState(false);
   const [showGroupDetails, setShowGroupDetails] = useState(false);
   const [editingGroup, setEditingGroup] = useState(false);
@@ -186,9 +188,24 @@ export default function ChatGroup() {
 
   async function runSearch(value) {
     setAddTerm(value);
-    if (!value.trim()) return setAddResults([]);
-    const { data } = await searchUsers(value);
-    setAddResults(extractList(data));
+    const requestId = ++searchRequestId.current;
+    if (!value.trim()) {
+      setAddResults([]);
+      setIsSearchingMembers(false);
+      return;
+    }
+    setIsSearchingMembers(true);
+    try {
+      const { data } = await searchUsers(value.trim());
+      if (requestId === searchRequestId.current) setAddResults(extractList(data));
+    } catch (error) {
+      if (requestId === searchRequestId.current) {
+        setAddResults([]);
+        toast.error(error?.response?.data?.message || "Couldn't search for members.");
+      }
+    } finally {
+      if (requestId === searchRequestId.current) setIsSearchingMembers(false);
+    }
   }
 
   if (isLoading) return <Loader />;
@@ -283,6 +300,9 @@ export default function ChatGroup() {
               <span className="text-sm">{u.username || [u.firstName, u.lastName].filter(Boolean).join(" ")}</span>
             </button>
           ))}
+          {addTerm.trim() && !isSearchingMembers && addResults.length === 0 && (
+            <p className="text-xs text-ink-faint py-2">No matching people found.</p>
+          )}
           <div className="flex gap-2 mt-3">
             <button onClick={() => leave.mutate()} className="flex-1 border border-border text-xs font-semibold py-2 rounded-lg">Leave group</button>
             <button onClick={() => remove.mutate()} className="flex-1 text-like border border-like/30 text-xs font-semibold py-2 rounded-lg">Delete group</button>
