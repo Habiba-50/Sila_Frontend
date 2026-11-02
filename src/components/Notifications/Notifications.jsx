@@ -74,8 +74,9 @@ export default function Notifications() {
         {notifications.map((n) => {
           const isIncomingFriendRequest = n.type === "FRIEND_REQUEST" && n.friendRequestStatus === "PENDING";
           const postId = typeof n.postId === "string" ? n.postId : getId(n.postId);
+          const chatId = typeof n.chatId === "string" ? n.chatId : getId(n.chatId);
           const canOpenProfile = ["FOLLOW", "FRIEND_REQUEST"].includes(n.type) && n.sender?.id;
-          const canOpen = Boolean(postId || canOpenProfile);
+          const canOpen = Boolean(postId || chatId || canOpenProfile);
           return (
             <div
               key={getId(n)}
@@ -88,6 +89,8 @@ export default function Notifications() {
                 onClick={() => {
                   if (postId) {
                     navigate(`/post/${postId}`);
+                  } else if (chatId) {
+                    navigate(`/chats/group/${chatId}`);
                   } else if (canOpenProfile) {
                     navigate(`/profile/${n.sender.id}`, {
                       state: { friendRequestId: isIncomingFriendRequest ? n.requestId : undefined },

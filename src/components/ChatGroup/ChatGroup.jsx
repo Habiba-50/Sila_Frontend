@@ -115,8 +115,9 @@ export default function ChatGroup() {
 
   function sendMessage(text) {
     const socket = getSocket();
+    if (!socket?.connected) return toast.error("Chat is disconnected. Please try again.");
     const content = replyingTo ? `↩ ${replyingTo.content}\n${text}` : text;
-    socket?.emit("sendGroupMessage", { groupId: id, content });
+    socket.emit("sendGroupMessage", { groupId: id, content });
     setMessages((prev) => [
       ...prev,
       { _id: `local-${Date.now()}`, content, from: { _id: userData?._id, username: userData?.username }, createdAt: new Date().toISOString(), pending: true },
