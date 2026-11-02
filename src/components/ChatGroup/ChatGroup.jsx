@@ -201,7 +201,10 @@ export default function ChatGroup() {
     } catch (error) {
       if (requestId === searchRequestId.current) {
         setAddResults([]);
-        toast.error(error?.response?.data?.message || "Couldn't search for members.");
+        console.error("Group member search failed:", error);
+        const status = error?.response?.status;
+        const reason = error?.response?.data?.message || error?.message;
+        toast.error(status ? `Member search failed (${status}): ${reason}` : reason || "Couldn't search for members.");
       }
     } finally {
       if (requestId === searchRequestId.current) setIsSearchingMembers(false);

@@ -41,7 +41,10 @@ export default function NewGroupModal({ onClose }) {
     } catch (error) {
       if (requestId === searchRequestId.current) {
         setResults([]);
-        toast.error(error?.response?.data?.message || "Couldn't search for people.");
+        console.error("Group people search failed:", error);
+        const status = error?.response?.status;
+        const reason = error?.response?.data?.message || error?.message;
+        toast.error(status ? `Search failed (${status}): ${reason}` : reason || "Couldn't search for people.");
       }
     } finally {
       if (requestId === searchRequestId.current) setIsSearching(false);
